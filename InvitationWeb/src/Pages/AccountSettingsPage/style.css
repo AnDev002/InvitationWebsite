@@ -1,0 +1,60 @@
+/* ----- BIẾN CSS & STYLES CƠ BẢN ----- */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-primary: 'Be Vietnam Pro', 'SVN-Gilroy', sans-serif;
+  --color-primary: #27548A;
+  --color-secondary: #CDD7E5;
+  --color-text-dark: #333;
+  --color-text-light: #666;
+  --color-background: #FFFFFF;
+  --color-background-light: #F8F9FA;
+  --color-border: #E0E0E0;
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --border-radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-primary); color: var(--color-text-dark); background-color: var(--color-background); line-height: 1.6; }
+a { text-decoration: none; color: inherit; transition: color 0.3s ease; }
+a:hover { color: var(--color-primary); }
+img { max-width: 100%; height: auto; display: block; }
+ul { list-style-position: inside; padding-left: 20px; }
+
+/* ----- CẤU TRÚC CHUNG & CONTAINER ----- */
+.page-wrapper { margin: 0 auto; overflow-x: hidden; }
+.container { width: 100%; max-width: 1600px; margin-left: auto; margin-right: auto; padding-left: 30px; padding-right: 30px; }
+.section-container { padding: 80px 0; }
+.section-container.section-light-bg { background-color: var(--color-background-light); }
+.section-container:last-of-type { padding-bottom: 80px; }
+.grid-container { width: 100%; display: grid; gap: 30px; }
+.centered-button { display: block; margin: 40px auto 0 auto; }
+
+.btn { 
+  border: 1px solid var(--color-text-dark); 
+  padding: 12px 28px; 
+  font-size: 15px; 
+  font-weight: 600; 
+  text-transform: uppercase; 
+  background-color: transparent; 
+  color: var(--color-text-dark); 
+  border-radius: var(--border-radius); 
+  cursor: pointer; 
+  transition: all 0.3s ease; 
+}
+.btn:hover { 
+  background-color: var(--color-text-dark); 
+  color: var(--color-background); 
+  transform: translateY(-2px); 
+}
+
+/* ----- MEDIA QUERIES TOÀN CỤC ----- */
+@media (max-width: 1200px) {
+    .container { padding: 0 25px; }
+}
+@media (max-width: 768px) {
+    .container { padding: 0 20px; }
+    .section-container { padding: 40px 0; }
+}

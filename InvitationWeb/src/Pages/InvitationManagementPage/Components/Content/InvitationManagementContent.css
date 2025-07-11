@@ -1,0 +1,625 @@
+/* ----- FONTS & GLOBAL ----- */
+body {
+    font-family: 'SVN-Gilroy', sans-serif;
+    margin: 0;
+    background-color: #fff;
+}
+
+/* ----- MAIN LAYOUT & HELPERS ----- */
+.management-page-wrapper {
+    width: 100%;
+    padding: 20px 0;
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.management-content-placeholder {
+    padding: 40px;
+    margin-top: 40px;
+    text-align: center;
+    background-color: #fff;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+}
+
+/* ----- PAGE HEADER ----- */
+.page-header-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1520px;
+    padding: 20px 0;
+    margin: 0 auto; /* Added for centering */
+}
+.back-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 16px;
+    color: rgba(0,0,0,1);
+    font-weight: 500;
+}
+.back-button-icon-wrapper {
+    border: 1px solid rgb(0,0,0);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.page-header-title {
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 20px;
+    color: rgba(39,84,138,1);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+
+/* ----- TABS ----- */
+.tabs-container {
+    border-top: 0.5px solid rgb(128,128,128);
+    border-bottom: 0.5px solid rgb(128,128,128);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 1520px; /* Added for consistency with header */
+    margin: 0 auto; /* Added for centering */
+}
+.tab-button {
+    background-color: transparent;
+    width: 253.3px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 16px;
+    color: rgba(0,0,0,1);
+    line-height: 21px;
+    text-transform: uppercase;
+    font-weight: 500;
+    transition: background-color 0.3s, color 0.3s;
+}
+.tab-button.active {
+    background-color: rgba(39,84,138,1);
+    color: rgba(255,255,255,1);
+}
+
+/* ----- GUEST MANAGEMENT STYLES ----- */
+.guest-action-btn {
+    border: 0.5px solid rgb(128,128,128);
+    width: 220px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    background-color: transparent;
+    cursor: pointer;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    border-radius: 4px; /* Added for consistency */
+}
+.filter-input, .filter-select {
+    border: 0.5px solid rgb(128,128,128);
+    height: 40px;
+    flex: 1;
+    padding: 0 20px;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 4px; /* Added for consistency */
+}
+
+/* ----- INVITATION SETTINGS PANEL STYLES ----- */
+.settings-input, .settings-textarea, .settings-select {
+    border: 0.5px solid rgb(128,128,128);
+    width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    background-color: white;
+    border-radius: 4px; /* Added for consistency */
+}
+.settings-input { height: 60px; }
+.settings-textarea { padding: 20px; }
+.settings-select {
+    height: 60px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 20px center;
+}
+
+
+/* Guest Table Cell Base Styles (for desktop view) */
+.table-header-cell, .table-body-cell {
+    border: 0.5px solid rgb(128,128,128);
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 5px;
+    text-align: center; /* Ensures text is centered in cells */
+    box-sizing: border-box; /* Ensures padding is included in element's total width and height */
+}
+.table-body-cell {
+    height: 121px;
+    font-weight: 500;
+    text-transform: none;
+    flex-direction: column;
+    gap: 8px;
+    line-height: 1.4;
+    justify-content: center; /* Center content vertically in body cells */
+}
+.group-tag {
+    background-color: rgba(39,84,138,1);
+    height: 29px;
+    min-width: 174px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4px 20px;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 4px;
+    white-space: nowrap; /* Prevent text wrap */
+}
+.table-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    transition: color 0.3s;
+}
+.table-action-btn:hover {
+    color: #000;
+}
+
+
+/* ----- MODAL STYLES ----- */
+.modal-overlay { 
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+    background: rgba(0, 0, 0, 0.6); 
+    display: flex; align-items: center; justify-content: center; z-index: 1000; 
+}
+.modal-container { 
+    background: white; 
+    padding: 0; 
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); 
+    width: 90%; 
+    max-width: 702px; /* Corrected max-width to match design */
+    border-radius: 8px; /* Added for consistency */
+    overflow: hidden; /* Ensures content respects border-radius */
+}
+.modal-container.modal-large { max-width: 800px; } 
+
+.modal-body { 
+    padding: 0; 
+}
+
+/* [MỚI] Nút cho modal xác nhận */
+.confirm-btn {
+    flex: 1;
+    height: 60px;
+    border: none;
+    background-color: transparent;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(39,84,138,1);
+    cursor: pointer;
+    padding-top: 20px;
+    transition: background-color 0.2s;
+}
+.confirm-btn.cancel {
+    border-right: 1px solid #ccc;
+}
+.confirm-btn:hover {
+    background-color: #f0f0f0;
+}
+
+
+/* ----- INVITATION LIST VIEW STYLES ----- */
+.page-header h2 { font-size: 28px; font-weight: 700; text-align: center;}
+.page-header p { text-align: center; color: #666; font-size: 16px; margin-top: 8px;}
+
+.invitation-grid-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
+    padding: 20px; /* Added padding for smaller screens */
+}
+.invitation-card-wrapper {
+    background-color: #fff; border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden; display: flex; flex-direction: column;
+    cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.invitation-card-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+.invitation-card-thumbnail img {
+    width: 100%; height: 300px; object-fit: cover; background-color: #eee;
+}
+.invitation-card-content {
+    padding: 20px; flex-grow: 1; display: flex; flex-direction: column;
+}
+.invitation-card-content h5 {
+    font-size: 18px; font-weight: 600; margin-bottom: auto; margin-top: 0;
+}
+.invitation-card-content .btn {
+    margin-top: 20px; background-color: #27548A; color: white; width: 100%;
+    padding: 12px 24px; font-size: 15px; font-weight: 700; 
+    border-radius: 8px; cursor: pointer; border: none;
+    text-transform: uppercase;
+}
+
+/* ----- RESPONSIVE DESIGN ----- */
+
+/* Styles for the new GuestCard component container */
+.guest-cards-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between cards */
+    padding: 0 1rem; /* Padding for the container of cards */
+    box-sizing: border-box;
+}
+
+/* Base style for individual guest cards */
+.guest-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header of the guest card */
+.guest-card-header {
+    background-color: rgba(204,215,229,0.5);
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Guest number in the card header */
+.guest-card-number {
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(39,84,138,1);
+}
+
+/* Action buttons container in the card header */
+.guest-card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Individual action buttons in the card header */
+.guest-card-action-btn {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.guest-card-action-btn:hover {
+    background-color: #f0f0f0;
+    border-color: #a0a0a0;
+}
+.guest-card-action-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.5;
+}
+
+/* Body of the guest card */
+.guest-card-body {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Individual info item (label + value) within the card body */
+.guest-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 5px;
+}
+.guest-info-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* Label for each info item */
+.guest-info-label {
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+/* Value for each info item */
+.guest-info-value {
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 14px;
+    color: #000;
+    text-align: right;
+    flex-grow: 1;
+}
+.guest-info-value.guest-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(39,84,138,1);
+}
+
+/* Group tag specifically for mobile cards */
+.group-tag-mobile {
+    background-color: rgba(39,84,138,1);
+    padding: 3px 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    align-self: flex-end; /* Align to the right in the flex container */
+}
+
+/* Footer of the guest card (e.g., email status) */
+.guest-card-footer {
+    background-color: rgba(239,239,239,0.5);
+    padding: 10px 15px;
+    font-family: 'SVN-Gilroy', sans-serif;
+    font-size: 12px;
+    color: rgba(102,102,102,1);
+    text-align: right;
+    border-top: 1px solid #e0e0e0;
+}
+
+
+/* For screens larger than 768px, hide the card view */
+@media (min-width: 769px) {
+    .guest-cards-container {
+        display: none; 
+    }
+}
+
+
+/* For medium screens (e.g., tablets, up to 1200px) */
+@media (max-width: 1200px) {
+    .container {
+        padding: 0 1.5rem; /* Reduce overall padding */
+    }
+
+    .tab-button {
+        width: auto; /* Allow tab button width to be flexible */
+        padding: 0 15px; /* Add horizontal padding */
+        font-size: 14px; /* Reduce font size */
+        height: 70px; /* Reduce height */
+    }
+
+    /* Guest Management Panel */
+    .guest-action-btn {
+        width: 180px; /* Reduce action button width */
+        font-size: 14px;
+        gap: 8px;
+    }
+
+    .filter-input, .filter-select {
+        padding: 0 15px;
+        font-size: 14px;
+    }
+
+    /* Invitation List View */
+    .invitation-card-thumbnail img {
+        height: 250px; /* Reduce thumbnail height */
+    }
+}
+
+/* For small screens (e.g., phones, under 768px) */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 1rem; /* Reduce padding further */
+    }
+
+    .page-header-container {
+        flex-direction: column; /* Stack header and back button vertically */
+        align-items: flex-start; /* Align to the left */
+        gap: 15px; /* Space between elements */
+        padding: 15px 1rem; /* Adjust padding for mobile */
+    }
+
+    .tabs-container {
+        flex-wrap: wrap; /* Allow tabs to wrap to next line */
+        height: auto; /* Auto height */
+        border-top: none; /* Remove top border if needed */
+        border-bottom: 0.5px solid rgb(128,128,128); /* Keep bottom border */
+        padding: 0 1rem; /* Add horizontal padding */
+        box-sizing: border-box; /* Include padding in element's total width and height */
+    }
+
+    .tab-button {
+        width: 50%; /* Each tab takes 50% width */
+        height: 60px; /* Reduce tab height */
+        border-bottom: 0.5px solid rgb(128,128,128); /* Add bottom border for each tab */
+    }
+
+    .tab-button:nth-child(odd) {
+        border-right: 0.5px solid rgb(128,128,128); /* Right border for odd tabs */
+    }
+    .tab-button:last-child {
+        border-right: none; /* Remove right border for the last tab */
+    }
+
+    /* Guest Management Panel adjustments for small screens */
+    /* Hide the traditional table on small screens */
+    .GuestManagementPanel > div:nth-child(3) > div:nth-child(1), /* Table header row */
+    .GuestManagementPanel > div:nth-child(3) > div:nth-child(2) > div { /* Individual table rows (will be replaced by cards) */
+        display: none; 
+    }
+
+    /* Action buttons container */
+    .GuestManagementPanel > div:nth-child(1) > div:nth-child(2) > div { 
+        flex-direction: column; /* Stack action buttons vertically */
+        align-items: stretch; /* Stretch buttons to full width */
+        gap: 10px; /* Adjust gap */
+    }
+    .GuestManagementPanel > div:nth-child(1) > div:nth-child(2) > div .guest-action-btn {
+        width: 100%; /* Ensure they take full width */
+    }
+
+    /* Filter inputs/selects container */
+    .GuestManagementPanel > div:nth-child(2) > div:nth-child(1) { 
+        flex-direction: column; /* Stack filter inputs/selects vertically */
+        align-items: stretch;
+        gap: 10px; /* Adjust gap */
+    }
+    .filter-input, .filter-select {
+        flex: none; /* Remove flex to control width manually */
+        width: 100%; /* Take full width */
+        margin-bottom: 0; /* Remove extra margin */
+    }
+
+    .modal-container.modal-large {
+        max-width: 95%; /* Large modal also scales down */
+    }
+
+    .modal-body > form > div:first-child { /* Columns in GuestForm */
+        flex-direction: column; /* Stack columns into rows */
+    }
+    
+    /* NEW: Stats section responsive adjustments */
+    .GuestManagementPanel > div:nth-child(2) > div:nth-child(2) { /* Targeting the row containing StatItems */
+        flex-direction: column; /* Stack items vertically */
+        align-items: stretch;
+        box-shadow: none; /* Remove box shadow as items are stacked */
+        border: 1px solid #eee; /* Add a border around the stacked stats */
+        border-radius: 8px; /* Rounded corners */
+    }
+    .GuestManagementPanel > div:nth-child(2) > div:nth-child(2) > div { /* Individual StatItem */
+        width: 100%; /* Make each item take full width */
+        border-bottom: 1px solid #eee; /* Add a separator between stacked items */
+        padding: 15px 0; /* Adjust padding */
+        height: auto; /* Allow height to adapt */
+    }
+    .GuestManagementPanel > div:nth-child(2) > div:nth-child(2) > div:last-child {
+        border-bottom: none; /* Remove border for the last item */
+    }
+    .GuestManagementPanel > div:nth-child(2) > div:nth-child(2) .VerticalSeparator {
+        display: none; /* Hide vertical separators in stacked view */
+    }
+    .GuestManagementPanel .StatItem div:first-child { /* Label font size */
+        font-size: 14px;
+    }
+    .GuestManagementPanel .StatItem div:last-child { /* Value font size */
+        font-size: 18px;
+    }
+
+
+    /* Manage Groups Form adjustments */
+    .ManageGroupsForm > div:first-child { /* Filter and add button container */
+        flex-direction: column;
+        gap: 10px;
+    }
+    .ManageGroupsForm > div:first-child > * {
+        width: 100%;
+    }
+    .ManageGroupsForm > div:first-child .guest-action-btn {
+        margin-bottom: 0;
+    }
+
+    /* Hide the traditional table in Manage Groups on small screens */
+    .ManageGroupsForm > div:nth-child(3) { 
+        display: none;
+    }
+    
+    /* Invitation List View */
+    .invitation-grid-wrapper {
+        grid-template-columns: 1fr; /* Only 1 column on phones */
+    }
+    .invitation-card-thumbnail img {
+        height: 200px;
+    }
+
+    /* Adjust padding for the forms in modals */
+    .modal-body form > div:first-child {
+        padding: 15px; /* Adjust padding for form content */
+        gap: 15px;
+    }
+    .modal-body form > div:last-child { /* Save/Cancel buttons */
+        padding: 15px; /* Adjust padding for buttons */
+        gap: 10px;
+    }
+}
+
+/* For very very small phones (e.g., under 380px) */
+@media (max-width: 380px) {
+    .page-header-title {
+        font-size: 18px;
+    }
+    .tab-button {
+        font-size: 12px;
+        height: 50px;
+    }
+    .guest-action-btn {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+    .guest-card-action-btn {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+}
