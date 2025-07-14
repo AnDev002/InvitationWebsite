@@ -107,6 +107,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/events/:id" element={<AboutUsPage />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         {/* Route để chỉnh sửa thiệp đã có */}

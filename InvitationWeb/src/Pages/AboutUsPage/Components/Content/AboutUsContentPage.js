@@ -1,4 +1,7 @@
+import { Skeleton } from '@mui/material';
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import api from '../../../../services/api'; // <<< SỬA LỖI: Thêm import axios instance
 
 // ----- COMPONENT CHỨA TOÀN BỘ CSS -----
 const Styles = () => (
@@ -59,17 +62,17 @@ const Styles = () => (
     .rsvp-choice img { width: 80px; height: 80px; margin: 0 auto 16px auto; }
     .rsvp-choice span { font-weight: 600; font-size: 18px; }
     .rsvp-form .form-group { margin-bottom: 20px; }
-    .rsvp-form .form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
+    .rsvp-form .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--color-primary) !important; }
     .form-input { width: 100%; padding: 16px; border: 1px solid var(--color-border); border-radius: var(--border-radius); font-size: 16px; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
     .form-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(39, 84, 138, 0.2); }
     
     /* ----- CONTACT & SHARE ----- */
     .contact-section { display: flex; justify-content: center; gap: 60px; }
-    .contact-card { text-align: center; }
+    .contact-card { text-align: center; color: var(--color-primary); }
     .contact-card h4 { font-size: 20px; font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }
     .contact-card .icon { display: inline-block; width: 40px; height: 40px; background-color: var(--color-secondary); border-radius: 50%; }
     
-    .share-section { text-align: center; }
+    .share-section { text-align: center; color: var(--color-primary); }
     .share-buttons { display: flex; justify-content: center; gap: 16px; margin-top: 16px; }
     .share-button { width: 50px; height: 50px; border-radius: 50%; background-color: var(--color-secondary); border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.2s ease; }
     .share-button:hover { transform: scale(1.1); }
@@ -135,96 +138,315 @@ const CountdownTimer = ({ targetDate }) => {
     </div>
   );
 };
+const AboutUsPageSkeleton = () => (
+    <>
+        <style>{`
+            .skeleton-box {
+                background-color: #eef0f2;
+                border-radius: 8px;
+                animation: skeleton-loading 1.5s infinite ease-in-out;
+            }
+            @keyframes skeleton-loading {
+                0% { background-color: #eef0f2; }
+                50% { background-color: #f6f7f8; }
+                100% { background-color: #eef0f2; }
+            }
+            .skeleton-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 30px;
+            }
+            .skeleton-hero {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+                height: 600px;
+                margin-top: 20px;
+            }
+            .skeleton-hero-main {
+                grid-column: 1 / 2;
+                grid-row: 1 / 3;
+            }
+            .skeleton-section {
+                padding: 80px 0;
+            }
+            .skeleton-header {
+                width: 350px;
+                height: 32px;
+                margin: 0 auto 40px auto;
+            }
+            .skeleton-story {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 60px;
+                align-items: center;
+            }
+            .skeleton-story-img {
+                width: 400px;
+                height: 400px;
+                border-radius: 50%;
+                margin: 0 auto;
+            }
+            .skeleton-story-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            .skeleton-text-line {
+                height: 16px;
+                border-radius: 4px;
+            }
+            @media (max-width: 992px) {
+                .skeleton-story { grid-template-columns: 1fr; }
+            }
+            @media (max-width: 768px) {
+                .skeleton-hero { grid-template-columns: 1fr; height: auto; }
+                .skeleton-story-img { width: 300px; height: 300px; }
+            }
+        `}</style>
+        <div className="skeleton-container">
+            <div className="skeleton-hero">
+                <Skeleton className="skeleton-hero-main" />
+                <Skeleton />
+                <Skeleton />
+            </div>
+            <div className="skeleton-section">
+                <Skeleton className="skeleton-header" />
+                 <div className="skeleton-story">
+                    <Skeleton className="skeleton-story-img" />
+                    <div className="skeleton-story-content">
+                        <Skeleton style={{width: '250px', height: '28px'}} />
+                        <Skeleton className="skeleton-text-line" style={{width: '80%'}} />
+                        <Skeleton className="skeleton-text-line" style={{width: '90%'}} />
+                        <Skeleton className="skeleton-text-line" style={{width: '75%'}} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </>
+);
 
+const RsvpSection = ({ invitationId, guestDetails }) => {
+    const [showForm, setShowForm] = useState(false);
+    const [status, setStatus] = useState(guestDetails?.status || 'pending');
+    const [attendingCount, setAttendingCount] = useState(guestDetails?.attendingCount || 1);
+    const [submitting, setSubmitting] = useState(false);
+    const [feedbackMessage, setFeedbackMessage] = useState({ text: '', type: '' });
+    // Nếu không có thông tin khách mời, không hiển thị gì cả
+    if (!guestDetails?._id) {
+        return (
+            <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f0f0f0', borderRadius: '8px' }}>
+                <p style={{ margin: 0, fontWeight: '500' }}>Phần xác nhận tham dự sẽ hiển thị khi bạn truy cập từ đường dẫn được gửi trong thiệp mời.</p>
+            </div>
+        );
+    }
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setFeedbackMessage({ text: '', type: '' });
+
+        try {
+            await api.put(`/invitations/${invitationId}/guests/${guestDetails._id}/rsvp`, {
+                status: status,
+                attendingCount: Number(attendingCount),
+            });
+            setFeedbackMessage({ text: 'Cảm ơn bạn đã gửi phản hồi!', type: 'success' });
+        } catch (error) {
+            console.error("Lỗi khi gửi phản hồi:", error);
+            setFeedbackMessage({ text: 'Đã có lỗi xảy ra, vui lòng thử lại.', type: 'error' });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if ((guestDetails.status === 'attending' || guestDetails.status === 'declined') && feedbackMessage.type !== 'success') {
+        return (
+            <div style={{ textAlign: 'center', padding: '30px 20px', backgroundColor: '#e8f5e9', borderRadius: '8px' }}>
+                <p style={{ margin: 0, fontWeight: 'bold', fontSize: '18px', color: '#2e7d32' }}>
+                    Bạn đã xác nhận tham gia thành công, xin cảm ơn và hẹn gặp lại!
+                </p>
+            </div>
+        );
+    }
+
+    // 2. Nếu đã gửi thành công trong phiên này, hiển thị lời cảm ơn
+    if (feedbackMessage.type === 'success') {
+        return (
+            <div style={{ textAlign: 'center', padding: '30px 20px', backgroundColor: '#e8f5e9', borderRadius: '8px' }}>
+                <p style={{ margin: 0, fontWeight: 'bold', fontSize: '18px', color: '#2e7d32' }}>
+                    {feedbackMessage.text}
+                </p>
+            </div>
+        );
+    }
+
+    // 3. Nếu chưa phản hồi và chưa bấm nút, hiển thị nút bấm
+    if (!showForm) {
+        return (
+            <div style={{ textAlign: 'center' }}>
+                <button onClick={() => setShowForm(true)} className="btn-primary" style={{ padding: '20px 40px', fontSize: '18px' }}>
+                    Xác nhận tham dự
+                </button>
+            </div>
+        );
+    }
+
+
+    return (
+        <form className="rsvp-form" onSubmit={handleSubmit}>
+            <div className="form-group">
+                <label htmlFor="attendanceStatus">Bạn sẽ tham gia chứ?</label>
+                <select 
+                    id="attendanceStatus" 
+                    className="form-input" 
+                    value={status} 
+                    onChange={(e) => setStatus(e.target.value)}
+                >
+                    <option value="pending">Chưa xác định trước được</option>
+                    <option value="attending">Tôi sẽ tham gia</option>
+                    <option value="declined">Tôi không tham gia được</option>
+                </select>
+            </div>
+            {status === 'attending' && (
+                <div className="form-group">
+                    <label htmlFor="attendanceCount">Số người tham dự (bao gồm cả bạn)</label>
+                    <input 
+                        id="attendanceCount" 
+                        type="number" 
+                        min="1" 
+                        max="10"
+                        className="form-input" 
+                        value={attendingCount}
+                        onChange={(e) => setAttendingCount(e.target.value)}
+                    />
+                </div>
+            )}
+            <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '20px', color: "var(--color-primary)" }} disabled={submitting}>
+                {submitting ? 'Đang gửi...' : 'Gửi phản hồi'}
+            </button>
+            {feedbackMessage.text && (
+                <div className={`feedback-message ${feedbackMessage.type}`}>
+                    {feedbackMessage.text}
+                </div>
+            )}
+        </form>
+    );
+};
 
 // ----- COMPONENT CHÍNH -----
 const AboutUsPage = () => {
-    const [rsvp, setRsvp] = useState(null);
+    const { id: invitationId } = useParams();
+    const [searchParams] = useSearchParams();
+    const guestId = searchParams.get('guestId');
+
+    const [invitationData, setInvitationData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (!invitationId) return;
+
+        const fetchInvitation = async () => {
+            try {
+                setLoading(true);
+                const queryString = guestId ? `?guestId=${guestId}` : '';
+                const response = await api.get(`/invitations/public/${invitationId}${queryString}`);
+                setInvitationData(response.data);
+            } catch (err) {
+                if (err.response) {
+                    setError(err.response.data.message || `Lỗi ${err.response.status}: Không thể tải dữ liệu.`);
+                } else if (err.request) {
+                    setError("Lỗi Mạng: Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối mạng.");
+                } else {
+                    setError(err.message);
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInvitation();
+    }, [invitationId, guestId]);
+
+    if (loading) {
+        return <AboutUsPageSkeleton />;
+    }
+
+    if (error) {
+        return <div style={{textAlign: 'center', padding: '50px', fontSize: '18px', color: 'red'}}>Lỗi: {error}</div>;
+    }
+
+    if (!invitationData) {
+        return <div style={{textAlign: 'center', padding: '50px', fontSize: '18px'}}>Không tìm thấy thông tin thiệp mời.</div>;
+    }
+    
+    const { settings, guestDetails } = invitationData;
+    const { groomName, brideName, groomInfo, brideInfo, groomImageUrl, brideImageUrl, eventDate, heroImages, galleryImages } = settings;
 
   return (
     <main>
       <Styles />
-      
+      {guestDetails && (
+          <div style={{padding: '20px', backgroundColor: '#e3f2fd', textAlign: 'center', fontWeight: 'bold', fontSize: '18px'}}>
+              {settings.salutationStyle} {guestDetails.name}, trân trọng mời bạn đến chung vui cùng chúng tôi!
+          </div>
+      )}
       <section className="hero-gallery container">
-        <div className="image-wrapper main-image">
-            <img src="https://placehold.co/800x1200/cccccc/ffffff?text=Ảnh+cưới+1" alt="Ảnh cưới 1" />
-        </div>
-        <div className="image-wrapper">
-            <img src="https://placehold.co/800x590/cccccc/ffffff?text=Ảnh+cưới+2" alt="Ảnh cưới 2" />
-        </div>
-        <div className="image-wrapper">
-            <img src="https://placehold.co/800x590/cccccc/ffffff?text=Ảnh+cưới+3" alt="Ảnh cưới 3" />
-        </div>
+          <div className="image-wrapper main-image">
+              <img src={heroImages.main} alt="Ảnh cưới chính" />
+          </div>
+          <div className="image-wrapper">
+              <img src={heroImages.sub1} alt="Ảnh cưới phụ 1" />
+          </div>
+          <div className="image-wrapper">
+              <img src={heroImages.sub2} alt="Ảnh cưới phụ 2" />
+          </div>
       </section>
 
       <div className="container">
         <section className="section-container">
-          <SectionHeader title="Về chúng tôi" />
-          <div className="story-block">
-            <div className="story-image">
-                <img src="https://placehold.co/400x400/E9ECEF/333?text=Chú+Rể" alt="Chú rể" />
+            <SectionHeader title="Về chúng tôi" />
+            <div className="story-block">
+                <div className="story-image">
+                    <img src={groomImageUrl} alt={groomName} />
+                </div>
+                <div className="story-content">
+                    <h3>{groomName}</h3>
+                    <p>"{groomInfo}"</p>
+                </div>
             </div>
-            <div className="story-content">
-                <p className="date">20.03.2025</p>
-                <h3>Chú rể: Anh Khoa</h3>
-                <p>"Lưu ý: Hệ thống sẽ tự động thay đổi cụm từ {`{TênKháchMời}`} thành tên chính xác của khách mời, và cụm từ {`{LờiXưngHô}`} thành chính xác kiểu hiện thị xưng hô mà bạn chọn khi bạn gửi link thiệp cho họ."</p>
-            </div>
-          </div>
         </section>
 
         <section className="section-container">
-          <div className="story-block reverse">
-            <div className="story-image">
-                <img src="https://placehold.co/400x400/F8F9FA/333?text=Cô+Dâu" alt="Cô dâu" />
+            <div className="story-block reverse">
+                <div className="story-image">
+                    <img src={brideImageUrl} alt={brideName} />
+                </div>
+                <div className="story-content">
+                    <h3>{brideName}</h3>
+                    <p>"{brideInfo}"</p>
+                </div>
             </div>
-            <div className="story-content">
-                <p className="date">20.03.2025</p>
-                <h3>Cô dâu: Như Thanh</h3>
-                <p>"Lưu ý: Hệ thống sẽ tự động thay đổi cụm từ {`{TênKháchMời}`} thành tên chính xác của khách mời, và cụm từ {`{LờiXưngHô}`} thành chính xác kiểu hiện thị xưng hô mà bạn chọn khi bạn gửi link thiệp cho họ."</p>
-            </div>
-          </div>
         </section>
         
         <section className="section-container">
-          <SectionHeader title="Ảnh cưới" />
-          <div className="photo-gallery">
-            <div className="photo-item"><img src="https://placehold.co/1520x800/E9ECEF/333?text=Ảnh+cưới" alt="Ảnh cưới" /></div>
-            <div className="photo-item"><img src="https://placehold.co/1520x800/F1F3F5/333?text=Ảnh+cưới" alt="Ảnh cưới" /></div>
-          </div>
+            <SectionHeader title="Ảnh cưới" />
+            <div className="photo-gallery">
+                {galleryImages.map((img, index) => (
+                      <div key={index} className="photo-item"><img src={img} alt={`Ảnh cưới ${index + 1}`} /></div>
+                ))}
+            </div>
         </section>
 
         <section className="section-container">
             <SectionHeader title="Đếm ngược đến ngày chung đôi" />
-            <CountdownTimer targetDate="2025-12-31T23:59:59" />
+            <CountdownTimer targetDate={eventDate} />
         </section>
 
         <section className="section-container rsvp-form-wrapper">
-             <SectionHeader title="Thông tin phản hồi" subtitle="Để thuận tiện cho việc sắp xếp chỗ ngồi, vui lòng phản hồi giúp vợ chồng mình nhé!" />
-             <div className="rsvp-choices">
-                <div className={`rsvp-choice ${rsvp === 'GIRL' ? 'selected' : ''}`} onClick={() => setRsvp('GIRL')}>
-                    <img src="https://placehold.co/80x80/f1f1f1/333?text=Nhà+gái" alt="Nhà gái"/>
-                    <span>Nhà gái</span>
-                </div>
-                <div className={`rsvp-choice ${rsvp === 'BOY' ? 'selected' : ''}`} onClick={() => setRsvp('BOY')}>
-                    <img src="https://placehold.co/80x80/f1f1f1/333?text=Nhà+trai" alt="Nhà trai"/>
-                    <span>Nhà trai</span>
-                </div>
-             </div>
-             <form className="rsvp-form">
-                <div className="form-group">
-                    <label htmlFor="guestName">Tên khách mời</label>
-                    <input id="guestName" type="text" className="form-input" placeholder="Vui lòng nhập tên của bạn" />
-                </div>
-                 <div className="form-group">
-                    <label htmlFor="attendanceCount">Số người tham dự</label>
-                    <input id="attendanceCount" type="number" min="1" className="form-input" placeholder="1" />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="transport">Phương tiện đi lại</label>
-                    <input id="transport" type="text" className="form-input" placeholder="Tự túc" />
-                </div>
-                <button type="submit" className="btn btn-primary" style={{width: '100%', marginTop: '20px'}}>Gửi phản hồi</button>
-             </form>
+            <SectionHeader title="Thông tin phản hồi" subtitle="Để thuận tiện cho việc sắp xếp chỗ ngồi, vui lòng phản hồi giúp vợ chồng mình nhé!" />
+            <RsvpSection invitationId={invitationId} guestDetails={guestDetails} />
         </section>
 
          <section className="section-container">

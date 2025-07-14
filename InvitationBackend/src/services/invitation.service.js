@@ -1,7 +1,7 @@
 const Invitation = require('../models/invitation.model');
 const InvitationTemplate = require('../models/invitationTemplate.model'); // Import model template
 const nodemailer = require('nodemailer'); // Uncomment if using Nodemailer
-
+const mongoose = require('mongoose');
 /**
  * [MỚI]
  * Lấy một thiệp mời công khai bằng slug của nó.
@@ -9,15 +9,32 @@ const nodemailer = require('nodemailer'); // Uncomment if using Nodemailer
  * @param {string} slug - Slug của thiệp mời.
  * @returns {Promise<Document|null>} Thiệp mời nếu tìm thấy.
  */
-const getInvitationBySlug = async (slug) => {
+const getInvitationBySlug = async (slug, guestId = null) => { // Thêm guestId làm tham số
     const invitation = await Invitation.findOne({ slug: slug }).populate('template', 'title');
-    if (invitation && invitation.settings.password) {
-        // Nếu thiệp có mật khẩu, không trả về thông tin nhạy cảm
-        // Ở đây ta có thể chọn chỉ trả về một phần thông tin hoặc một thông báo yêu cầu mật khẩu
-        // Hiện tại, ta trả về toàn bộ, logic kiểm tra mật khẩu sẽ ở controller/frontend
+    
+    if (!invitation) {
+        return null; // Trả về null nếu không tìm thấy thiệp
     }
-    return invitation;
+
+    // Nếu có mật khẩu, logic kiểm tra sẽ ở controller/frontend
+    if (invitation.settings.password) {
+        // ...
+    }
+
+    // Nếu có guestId, tìm khách mời cụ thể và trả về
+    if (guestId && mongoose.Types.ObjectId.isValid(guestId)) {
+        const guest = invitation.guests.id(guestId);
+        if (guest) {
+            // Tạo một object mới để không thay đổi bản gốc và chỉ trả về những gì cần thiết
+            const publicInvitation = invitation.toObject();
+            publicInvitation.guestDetails = guest.toObject();
+            return publicInvitation;
+        }
+    }
+
+    return invitation; // Trả về thiệp gốc nếu không có guestId hoặc không tìm thấy guest
 };
+
 
 
 /**
@@ -169,11 +186,18 @@ const addWishToInvitation = async (invitationId, wishData) => {
 
 // MỚI: Function để cập nhật cài đặt thiệp
 const updateInvitationSettings = async (invitationId, userId, settingsData) => {
-    // Đảm bảo chỉ các trường cài đặt được phép được cập nhật
-    const allowedSettings = ['showWishList', 'showGuestList', 'password', 'title', 'description', 'salutationStyle', 'displayStyle', 'emailSubject', 'emailBody'];
+    // SỬA LỖI: Bổ sung tất cả các trường cài đặt mới vào danh sách cho phép
+    const allowedSettings = [
+        'showWishList', 'showGuestList', 'password', 
+        'title', 'description', 'salutationStyle', 'displayStyle', 'emailSubject', 'emailBody',
+        'landingPageUrl', 'eventDate', 'groomName', 'brideName', 'groomInfo', 'brideInfo',
+        'groomImageUrl', 'brideImageUrl', 'heroImages', 'galleryImages', 'contactGroom', 'contactBride'
+    ];
     const update = {};
     for (const key of allowedSettings) {
+        // Kiểm tra xem settingsData từ client có chứa key này không
         if (settingsData[key] !== undefined) {
+            // Nếu có thì thêm vào object để update
             update[`settings.${key}`] = settingsData[key];
         }
     }
@@ -184,6 +208,7 @@ const updateInvitationSettings = async (invitationId, userId, settingsData) => {
         { new: true, runValidators: true }
     ).populate('template', 'title imgSrc'); // Populated lại template sau khi cập nhật
 };
+
 
 
 // --- MỚI: Quản lý Nhóm khách mời ---
@@ -304,20 +329,119 @@ const sendInvitationEmailToGuest = async (invitationId, guestId, userId) => {
     }
 
     const { emailSubject, emailBody, salutationStyle } = invitation.settings;
-    const { name, salutation } = guest;
+    const { name, salutation, _id: finalGuestId } = guest;
 
+    // --- URL ĐỘNG DỰA TRÊN INVITATION ID ---
+    const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    // URL mới: /events/60f...abc?guestId=60f...xyz
+    const destinationUrl = `${frontendBaseUrl}/events/${invitation._id}?guestId=${finalGuestId}`;
+    
     const finalSubject = (emailSubject || '').replace('{TênKháchMời}', name).replace('{LờiXưngHô}', salutation || salutationStyle);
-    const finalBody = (emailBody || '').replace('{TênKháchMời}', name).replace('{LờiXưngHô}', salutation || salutationStyle);
 
-    const redirectButtonHtml = `
-        <p style="margin-top: 20px;">
-            <a href="https://baotrithangmay.vn/infomation-details" 
-            style="display: inline-block; padding: 10px 20px; font-family: Arial, sans-serif; font-size: 16px; color: #ffffff; background-color: #007BFF; border-radius: 5px; text-decoration: none; text-align: center;">
-                Tìm hiểu thêm về chúng tôi
-            </a>
-        </p>
+    const personalizedBody = `
+        <p><b>${salutation || salutationStyle} ${name},</b></p>
+        <p>${(emailBody || '').replace(/\n/g, '<br>')}</p>
     `;
-    const fullHtmlBody = `<p>${finalBody.replace(/\n/g, '<br>')}</p>${redirectButtonHtml}`;
+
+    const finalBody = (emailBody || '').replace(/\n/g, '<br>');
+
+    // ---- START: NÂNG CẤP TOÀN BỘ GIAO DIỆN EMAIL ----
+    const fullHtmlBody = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${finalSubject}</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100% !important;
+                background-color: #f4f4f4;
+                font-family: 'Roboto', Arial, sans-serif;
+            }
+            .container {
+                width: 100%;
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            .content {
+                padding: 30px;
+                text-align: center;
+                font-size: 16px;
+                line-height: 1.6;
+                color: #333333;
+            }
+            .header {
+                padding: 20px 0;
+                text-align: center;
+                background-color: #ffffff;
+            }
+            .header img {
+                max-width: 180px;
+            }
+            .button {
+                display: inline-block;
+                padding: 12px 25px;
+                margin-top: 25px;
+                font-family: 'Roboto', Arial, sans-serif;
+                font-size: 16px;
+                font-weight: bold;
+                color: #ffffff !important;
+                background-color: #f7a600; /* Màu cam chủ đạo của website */
+                border-radius: 5px;
+                text-decoration: none;
+                transition: background-color 0.3s ease;
+            }
+            .button:hover {
+                background-color: #e69500; /* Màu cam đậm hơn khi hover */
+            }
+            .footer {
+                text-align: center;
+                padding: 20px;
+                font-size: 12px;
+                color: #999999;
+            }
+        </style>
+    </head>
+    <body>
+        <table width="100%" border="0" cellspacing="0" cellpadding="20" style="background-color: #f4f4f4;">
+            <tr>
+                <td align="center">
+                    <table class="container" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td class="header">
+                                <img src="https://baotrithangmay.vn/wp-content/uploads/2024/02/logo-HNE.png" alt="Thang máy HNE Logo">
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="content">
+                                ${personalizedBody}
+                                <p style="margin: 0;">${finalBody}</p>
+                                <a href="${destinationUrl}" class="button">
+                                    Tìm hiểu thêm về chúng tôi
+                                </a>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="footer">
+                                © ${new Date().getFullYear()} Công ty TNHH Thang máy HNE. All rights reserved.
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    `;
+    // ---- END: NÂNG CẤP TOÀN BỘ GIAO DIỆN EMAIL ----
 
     const transporter = nodemailer.createTransport({
         service: 'gmail', 
@@ -346,6 +470,79 @@ const sendInvitationEmailToGuest = async (invitationId, guestId, userId) => {
         throw new Error('Gửi email thất bại.');
     }
 };
+/**
+ * [MỚI]
+ * Lấy một thiệp mời công khai bằng ID của nó, kèm thông tin khách mời nếu có.
+ * @param {string} invitationId - ID của thiệp mời.
+ * @param {string} guestId - ID của khách mời (tùy chọn).
+ * @returns {Promise<Document|null>} Thiệp mời và thông tin khách mời.
+ */
+const getPublicInvitationById = async (invitationId, guestId = null) => {
+    // Kiểm tra ID hợp lệ trước khi query
+    if (!mongoose.Types.ObjectId.isValid(invitationId)) {
+        throw new Error('ID thiệp mời không hợp lệ.');
+    }
+
+    // Lấy toàn bộ dữ liệu thiệp mời
+    const invitation = await Invitation.findById(invitationId);
+
+    if (!invitation) {
+        return null;
+    }
+
+    let guestDetails = null;
+    if (guestId && mongoose.Types.ObjectId.isValid(guestId)) {
+        const guest = invitation.guests.id(guestId);
+        if (guest) {
+            // <<< SỬA LỖI TẠI ĐÂY: Thêm _id vào đối tượng guestDetails >>>
+            // Chuyển Mongoose document thành một object JavaScript thông thường
+            // để đảm bảo tất cả các thuộc tính (bao gồm cả _id) được gửi đi.
+            guestDetails = guest.toObject(); 
+        }
+    }
+
+    // Trả về tất cả dữ liệu cần thiết cho trang công khai
+    const publicInvitationData = {
+        _id: invitation._id,
+        slug: invitation.slug,
+        settings: invitation.settings,
+        content: invitation.content,
+        design: invitation.design,
+        guestDetails: guestDetails, // Sẽ là null nếu không có guestId hoặc guestId không hợp lệ
+    };
+
+    return publicInvitationData;
+};
+
+/**
+ * Cập nhật trạng thái tham dự (RSVP) cho một khách mời cụ thể.
+ * Hàm này không yêu cầu xác thực người dùng (userId).
+ * @param {string} invitationId ID của thiệp mời.
+ * @param {string} guestId ID của khách mời.
+ * @param {object} rsvpData Dữ liệu phản hồi ({ status, attendingCount }).
+ * @returns {Promise<Document|null>}
+ */
+const updateGuestRsvp = async (invitationId, guestId, rsvpData) => {
+    // Tìm thiệp mời chỉ bằng ID, không cần userId
+    const invitation = await Invitation.findById(invitationId);
+    if (!invitation) {
+        throw new Error('Không tìm thấy thiệp mời.');
+    }
+
+    // Tìm khách mời trong thiệp đó
+    const guest = invitation.guests.id(guestId);
+    if (!guest) {
+        throw new Error('Không tìm thấy thông tin khách mời.');
+    }
+
+    // Cập nhật các trường liên quan đến RSVP
+    guest.status = rsvpData.status;
+    guest.attendingCount = rsvpData.attendingCount;
+    
+    // Lưu lại sự thay đổi
+    await invitation.save();
+    return guest;
+};
 
 
 module.exports = {
@@ -365,4 +562,6 @@ module.exports = {
     updateGuestGroupInInvitation, // NEW
     removeGuestGroupFromInvitation, // NEW
     sendInvitationEmailToGuest, // MỚI: Gửi email
+    getPublicInvitationById,
+    updateGuestRsvp,
 };

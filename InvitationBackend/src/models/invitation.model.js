@@ -97,6 +97,31 @@ const invitationSchema = new mongoose.Schema({
         displayStyle: { type: String, default: 'Kiểu 1', enum: ['Kiểu 1', 'Kiểu 2'] },
         emailSubject: { type: String, default: '{LờiXưngHô} {TênKháchMời} Đến tham dự buổi tiệc cùng gia đình chúng tôi! - Thiệp mời online' },
         emailBody: { type: String, default: 'Một dấu mốc quan trọng đang đến và chúng tôi rất mong có bạn đồng hành trong khoảnh khắc đáng nhớ này.\nTrân trọng mời bạn tham dự sự kiện đặc biệt của chúng tôi.\nSự hiện diện của bạn là món quà ý nghĩa nhất mà chúng tôi có thể mong chờ!\n\nTrân trọng,\nBiihappy' },
+        
+        eventDate: { type: Date, default: () => new Date() },
+        
+        groomName: { type: String, default: 'Chú rể' },
+        brideName: { type: String, default: 'Cô dâu' },
+        
+        groomInfo: { type: String, default: 'Thông tin về chú rể...' },
+        brideInfo: { type: String, default: 'Thông tin về cô dâu...' },
+
+        groomImageUrl: { type: String, default: 'https://placehold.co/400x400/E9ECEF/333?text=Chú+Rể' },
+        brideImageUrl: { type: String, default: 'https://placehold.co/400x400/F8F9FA/333?text=Cô+Dâu' },
+
+        heroImages: {
+            main: { type: String, default: 'https://placehold.co/800x1200/cccccc/ffffff?text=Ảnh+cưới+1' },
+            sub1: { type: String, default: 'https://placehold.co/800x590/cccccc/ffffff?text=Ảnh+cưới+2' },
+            sub2: { type: String, default: 'https://placehold.co/800x590/cccccc/ffffff?text=Ảnh+cưới+3' }
+        },
+        
+        galleryImages: [
+            { type: String, default: 'https://placehold.co/1520x800/E9ECEF/333?text=Ảnh+cưới' },
+            { type: String, default: 'https://placehold.co/1520x800/F1F3F5/333?text=Ảnh+cưới' }
+        ],
+
+        contactGroom: { type: String, default: '09xxxxxxxx' },
+        contactBride: { type: String, default: '08xxxxxxxx' }
     },
     // MỚI: Mảng để lưu trữ các nhóm khách mời tùy chỉnh cho thiệp này
     guestGroups: [guestGroupSchema],

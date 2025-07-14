@@ -1,5 +1,8 @@
 const invitationService = require('../services/invitation.service');
 const mongoose = require('mongoose'); // Thêm dòng này để kiểm tra ObjectId
+const sharp = require('sharp');
+const { uploadFileToR2 } = require('../services/r2.service.js'); // Đảm bảo bạn đã export hàm này
+const _ = require('lodash'); // Thư viện tiện ích giúp set giá trị cho object lồng nhau
 
 // === Controllers cho các hành động cần xác thực ===
 
@@ -134,12 +137,32 @@ const removeGuest = async (req, res, next) => {
 // Lấy thiệp công khai bằng slug
 const getPublicInvitationBySlug = async (req, res, next) => {
     try {
-        const invitation = await invitationService.getInvitationBySlug(req.params.slug);
+        const { slug } = req.params;
+        const { guestId } = req.query; // Lấy guestId từ query string
+
+        const invitation = await invitationService.getInvitationBySlug(slug, guestId); // Truyền guestId vào service
+        
         if (!invitation) {
             return res.status(404).json({ message: 'Không tìm thấy thiệp mời.' });
         }
-        // Logic kiểm tra mật khẩu có thể được thêm ở đây nếu cần
-        // Ví dụ: if (invitation.settings.password && invitation.settings.password !== req.body.password) { ... }
+        
+        res.status(200).json(invitation);
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getPublicInvitationById = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { guestId } = req.query;
+
+        const invitation = await invitationService.getPublicInvitationById(id, guestId);
+        
+        if (!invitation) {
+            return res.status(404).json({ message: 'Không tìm thấy thiệp mời.' });
+        }
+        
         res.status(200).json(invitation);
     } catch (error) {
         next(error);
@@ -161,9 +184,49 @@ const updateInvitationSettings = async (req, res, next) => {
     try {
         const userId = req.user._id;
         const invitationId = req.params.id;
-        const settingsData = req.body;
 
-        const updatedInvitation = await invitationService.updateInvitationSettings(invitationId, userId, settingsData);
+        if (!req.body.settingsData) {
+            return res.status(400).json({ message: 'Thiếu dữ liệu cài đặt (settingsData).' });
+        }
+        const settingsUpdate = JSON.parse(req.body.settingsData);
+        
+        // Mảng để chứa các URL của bộ sưu tập ảnh mới
+        const newGalleryImageUrls = [];
+
+        // Xử lý các file ảnh được tải lên (nếu có)
+        if (req.files && req.files.length > 0) {
+            const uploadPromises = req.files.map(async (file) => {
+                const processedBuffer = await sharp(file.buffer)
+                    .resize({ width: 1200, fit: 'inside', withoutEnlargement: true })
+                    .webp({ quality: 85 })
+                    .toBuffer();
+                
+                const { url } = await uploadFileToR2(processedBuffer, 'image/webp');
+
+                // <<< SỬA LỖI TẠI ĐÂY >>>
+                // Nếu là file của bộ sưu tập, gom vào mảng
+                if (file.fieldname === 'galleryImages') {
+                    newGalleryImageUrls.push(url);
+                } 
+                // Nếu là các file ảnh đơn lẻ, cập nhật trực tiếp vào object settings
+                else {
+                    _.set(settingsUpdate, file.fieldname.replace(/_/g, '.'), url);
+                }
+            });
+            await Promise.all(uploadPromises);
+        }
+
+        // Hợp nhất các URL mới của bộ sưu tập với các URL cũ đã có
+        if (newGalleryImageUrls.length > 0) {
+            // Đảm bảo trường galleryImages là một mảng trước khi hợp nhất
+            if (!Array.isArray(settingsUpdate.galleryImages)) {
+                settingsUpdate.galleryImages = [];
+            }
+            settingsUpdate.galleryImages.push(...newGalleryImageUrls);
+        }
+        
+        // Gọi service để cập nhật vào DB với object settings hoàn chỉnh
+        const updatedInvitation = await invitationService.updateInvitationSettings(invitationId, userId, settingsUpdate);
 
         if (!updatedInvitation) {
             return res.status(404).json({ message: 'Không tìm thấy thiệp hoặc bạn không có quyền.' });
@@ -172,12 +235,16 @@ const updateInvitationSettings = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: 'Cài đặt thiệp đã được cập nhật thành công.',
-            data: updatedInvitation.settings, // Trả về chỉ các cài đặt đã cập nhật
+            data: updatedInvitation.settings,
         });
     } catch (error) {
+        console.error("Error in updateInvitationSettings:", error);
         next(error);
     }
 };
+
+
+
 
 // --- MỚI: Controllers cho Quản lý Nhóm khách mời ---
 
@@ -320,6 +387,28 @@ const sendInvitationEmailToGuest = async (req, res, next) => {
     }
 };
 
+// <<< THÊM MỚI: CONTROLLER ĐỂ XỬ LÝ RSVP >>>
+const submitRsvp = async (req, res, next) => {
+    try {
+        const { invitationId, guestId } = req.params;
+        const { status, attendingCount } = req.body;
+
+        const updatedGuest = await invitationService.updateGuestRsvp(invitationId, guestId, { status, attendingCount });
+
+        if (!updatedGuest) {
+            return res.status(404).json({ message: 'Không tìm thấy thiệp hoặc khách mời.' });
+        }
+        
+        res.status(200).json({
+            success: true,
+            message: 'Phản hồi đã được cập nhật thành công.',
+            data: updatedGuest,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createInvitation,
     getMyInvitations,
@@ -337,4 +426,6 @@ module.exports = {
     updateGuestGroup, // NEW
     removeGuestGroup, // NEW
     sendInvitationEmailToGuest,
+    getPublicInvitationById,
+    submitRsvp,
 };

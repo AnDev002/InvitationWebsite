@@ -1,9 +1,9 @@
 // File: InvitationManagementContent.jsx
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 // Giả sử bạn có file api service
-import api from '../../../../services/api'; 
+import api from '../../../../services/api';
 import './InvitationManagementContent.css';
 
 // ----- CÁC ICON (GIỮ NGUYÊN) -----
@@ -64,14 +64,14 @@ const Modal = ({ title, children, onClose, size = 'normal' }) => (
 {/* ----- MODAL XÁC NHẬN XÓA ----- */}
 const DeleteConfirmationModal = ({ onConfirm, onClose, message = 'Bạn thực sự muốn xóa thiệp mời này?', description = 'Sau khi đã xoá, tất cả dữ liệu liên quan đến thiệp này sẽ không thể khôi phục lại được. Vậy nên, xin vui lòng chắc chắn hành động của mình!' }) => (
     <div className="modal-overlay" onClick={onClose}>
-        <div style={{ 
-            backgroundColor: "rgba(255,255,255,1)", 
+        <div style={{
+            backgroundColor: "rgba(255,255,255,1)",
             width: '702px',
             display: "flex",
-            flexDirection: "column", 
+            flexDirection: "column",
             justifyContent: "start",
             alignItems: "center",
-            gap: "20px", 
+            gap: "20px",
             paddingTop: "20px",
             borderRadius: "8px",
             overflow: "hidden"
@@ -110,35 +110,35 @@ const FormField = ({ label, children }) => (
 );
 
 const CustomInput = ({ style, ...props }) => (
-    <input 
-        {...props} 
-        style={{ 
-            border: "0.5px solid rgb(128,128,128)", 
-            height: "40px", 
-            width: "100%", 
-            padding: "0 20px", 
-            boxSizing: 'border-box', 
-            fontFamily: "'SVN-Gilroy', sans-serif", 
+    <input
+        {...props}
+        style={{
+            border: "0.5px solid rgb(128,128,128)",
+            height: "40px",
+            width: "100%",
+            padding: "0 20px",
+            boxSizing: 'border-box',
+            fontFamily: "'SVN-Gilroy', sans-serif",
             fontSize: "16px",
             borderRadius: '4px',
-            ...style 
-        }} 
+            ...style
+        }}
     />
 );
 
 const CustomSelect = ({ children, style, ...props }) => (
     <div style={{ position: 'relative' }}>
-        <select 
-            {...props} 
-            style={{ 
-                border: "0.5px solid rgb(128,128,128)", 
-                height: "40px", 
-                width: "100%", 
-                padding: "0 20px", 
-                boxSizing: 'border-box', 
-                fontFamily: "'SVN-Gilroy', sans-serif", 
-                fontSize: "16px", 
-                appearance: 'none', 
+        <select
+            {...props}
+            style={{
+                border: "0.5px solid rgb(128,128,128)",
+                height: "40px",
+                width: "100%",
+                padding: "0 20px",
+                boxSizing: 'border-box',
+                fontFamily: "'SVN-Gilroy', sans-serif",
+                fontSize: "16px",
+                appearance: 'none',
                 WebkitAppearance: 'none',
                 borderRadius: '4px',
                 ...style
@@ -164,20 +164,18 @@ const GuestForm = ({ invitationId, onSave, onClose, guestToEdit }) => {
     const [giftAmount, setGiftAmount] = useState('');
     const [giftUnit, setGiftUnit] = useState('VND');
     const [salutation, setSalutation] = useState('');
-    const [availableGroups, setAvailableGroups] = useState([]); // State mới cho nhóm khách mời
+    const [availableGroups, setAvailableGroups] = useState([]);
 
     const availableSalutations = ['Lời xưng hô mặc định', 'Thân gửi', 'Trân trọng kính mời'];
 
-    // Fetch groups when component mounts or invitationId changes
     useEffect(() => {
         const fetchGroups = async () => {
             try {
                 const response = await api.get(`/invitations/${invitationId}/guest-groups`);
-                setAvailableGroups(response.data.data); // data.data vì backend trả về {status, results, data}
+                setAvailableGroups(response.data.data);
             } catch (error) {
                 console.error("Lỗi khi tải danh sách nhóm:", error);
-                // Optionally, set a default list if fetching fails
-                setAvailableGroups([]); 
+                setAvailableGroups([]);
             }
         };
         if (invitationId) {
@@ -208,14 +206,13 @@ const GuestForm = ({ invitationId, onSave, onClose, guestToEdit }) => {
             } else {
                 await api.post(`/invitations/${invitationId}/guests`, guestData);
             }
-            onSave(); // Refetch invitation data including guests
+            onSave();
             onClose();
         } catch (error) {
             console.error("Lỗi khi lưu khách mời:", error);
-            // alert(`Lưu khách mời thất bại: ${error.response?.data?.message || error.message}`);
         }
     };
-    
+
     return (
         <form onSubmit={handleSubmit}>
             <div style={{ display: "flex", flexDirection: "row", gap: "20px", padding: '20px' }}>
@@ -282,21 +279,17 @@ const GuestForm = ({ invitationId, onSave, onClose, guestToEdit }) => {
 };
 
 {/* ----- FORM QUẢN LÝ NHÓM ----- */}
-const ManageGroupsForm = ({ invitationId, onClose, onDataChange }) => { 
-    const [groups, setGroups] = useState([]); 
-    
-    // Đổi tên biến để phản ánh việc chúng được sử dụng cho cả nhập liệu và lọc
-    const [newGroupName, setNewGroupName] = useState(''); // Đây sẽ là input chính cho tên nhóm
-    const [newGroupSalutation, setNewGroupSalutation] = useState('Thân gửi'); // Đây sẽ là input chính cho lời xưng hô
+const ManageGroupsForm = ({ invitationId, onClose, onDataChange }) => {
+    const [groups, setGroups] = useState([]);
 
-    // Loại bỏ state `isAdding` vì không cần form ẩn/hiện nữa
-    // const [isAdding, setIsAdding] = useState(false); 
+    const [newGroupName, setNewGroupName] = useState('');
+    const [newGroupSalutation, setNewGroupSalutation] = useState('Thân gửi');
 
-    const [editingGroupId, setEditingGroupId] = useState(null); 
+    const [editingGroupId, setEditingGroupId] = useState(null);
     const [editedName, setEditedName] = useState('');
     const [editedSalutation, setEditedSalutation] = useState('');
 
-    const [groupToDelete, setGroupToDelete] = useState(null); 
+    const [groupToDelete, setGroupToDelete] = useState(null);
 
     const availableSalutations = ['Thân gửi', 'Kính mời', 'Trân trọng kính mời'];
 
@@ -304,7 +297,7 @@ const ManageGroupsForm = ({ invitationId, onClose, onDataChange }) => {
         if (!invitationId) return;
         try {
             const response = await api.get(`/invitations/${invitationId}/guest-groups`);
-            setGroups(response.data.data); 
+            setGroups(response.data.data);
         } catch (error) {
             console.error("Lỗi khi tải danh sách nhóm:", error);
         }
@@ -322,40 +315,39 @@ const ManageGroupsForm = ({ invitationId, onClose, onDataChange }) => {
         if (!groupToDelete) return;
         try {
             await api.delete(`/invitations/${invitationId}/guest-groups/${groupToDelete}`);
-            fetchGroups(); 
-            onDataChange(); 
+            fetchGroups();
+            onDataChange();
         } catch (error) {
             console.error("Lỗi khi xóa nhóm:", error);
-            alert(`Xóa nhóm thất bại: ${error.response?.data?.message || error.message}`); 
+            alert(`Xóa nhóm thất bại: ${error.response?.data?.message || error.message}`);
         } finally {
             setGroupToDelete(null);
         }
     };
 
-    // Hàm này bây giờ sẽ được gọi trực tiếp bởi nút "Thêm mới"
-    const handleAddOrFilterGroup = async () => { // Đổi tên hàm cho rõ ràng hơn
-        if (!newGroupName.trim()) { // Sử dụng newGroupName từ input chính
-            alert('Tên nhóm không được để trống.'); 
+    const handleAddOrFilterGroup = async () => {
+        if (!newGroupName.trim()) {
+            alert('Tên nhóm không được để trống.');
             return;
         }
         try {
-            await api.post(`/invitations/${invitationId}/guest-groups`, { 
-                name: newGroupName, 
-                salutation: newGroupSalutation 
+            await api.post(`/invitations/${invitationId}/guest-groups`, {
+                name: newGroupName,
+                salutation: newGroupSalutation
             });
-            fetchGroups(); 
-            onDataChange(); 
-            setNewGroupName(''); // Reset input sau khi thêm thành công
-            setNewGroupSalutation('Thân gửi'); // Reset select sau khi thêm thành công
-            alert('Thêm nhóm thành công!'); // Thông báo thành công
+            fetchGroups();
+            onDataChange();
+            setNewGroupName('');
+            setNewGroupSalutation('Thân gửi');
+            alert('Thêm nhóm thành công!');
         } catch (error) {
             console.error("Lỗi khi thêm nhóm mới:", error);
-            alert(`Thêm nhóm thất bại: ${error.response?.data?.message || error.message}`); 
+            alert(`Thêm nhóm thất bại: ${error.response?.data?.message || error.message}`);
         }
     };
 
     const handleEditClick = (group) => {
-        setEditingGroupId(group._id); 
+        setEditingGroupId(group._id);
         setEditedName(group.name);
         setEditedSalutation(group.salutation);
     };
@@ -366,95 +358,66 @@ const ManageGroupsForm = ({ invitationId, onClose, onDataChange }) => {
 
     const handleSaveEdit = async (groupId) => {
         if (!editedName.trim()) {
-            alert('Tên nhóm không được để trống.'); 
+            alert('Tên nhóm không được để trống.');
             return;
         }
         try {
-            await api.put(`/invitations/${invitationId}/guest-groups/${groupId}`, { 
-                name: editedName, 
-                salutation: editedSalutation 
+            await api.put(`/invitations/${invitationId}/guest-groups/${groupId}`, {
+                name: editedName,
+                salutation: editedSalutation
             });
-            fetchGroups(); 
-            onDataChange(); 
-            setEditingGroupId(null); 
+            fetchGroups();
+            onDataChange();
+            setEditingGroupId(null);
         } catch (error) {
             console.error("Lỗi khi cập nhật nhóm:", error);
-            alert(`Cập nhật nhóm thất bại: ${error.response?.data?.message || error.message}`); 
+            alert(`Cập nhật nhóm thất bại: ${error.response?.data?.message || error.message}`);
         }
     };
-    
+
     return (
         <div style={{ backgroundColor: "rgba(255,255,255,1)", display: "flex", flexDirection: "column", justifyContent: "start", alignItems: "start", gap: "20px", padding: '20px' }}>
-            {/* Thanh nhập liệu và nút thêm mới */}
             <div style={{ display: "flex", flexDirection: "row", justifyContent: "start", alignItems: "center", gap: "20px", width: "100%" }}>
-                {/* Các trường nhập liệu chính cho việc thêm nhóm */}
-                <input 
-                    className="filter-input" // Giữ nguyên class nếu bạn muốn giữ style
-                    style={{ flex: 1 }} 
-                    placeholder="Nhập tên nhóm mới..." // Thay đổi placeholder cho rõ ràng
-                    value={newGroupName} // Liên kết với state newGroupName
-                    onChange={(e) => setNewGroupName(e.target.value)} // Cập nhật newGroupName
-                />
-                <select 
-                    className="filter-select" // Giữ nguyên class nếu bạn muốn giữ style
+                <input
+                    className="filter-input"
                     style={{ flex: 1 }}
-                    value={newGroupSalutation} // Liên kết với state newGroupSalutation
-                    onChange={(e) => setNewGroupSalutation(e.target.value)} // Cập nhật newGroupSalutation
+                    placeholder="Nhập tên nhóm mới..."
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                />
+                <select
+                    className="filter-select"
+                    style={{ flex: 1 }}
+                    value={newGroupSalutation}
+                    onChange={(e) => setNewGroupSalutation(e.target.value)}
                 >
-                    {/* Các option cho lời xưng hô */}
                     {availableSalutations.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                {/* Nút "Thêm mới" gọi hàm handleAddOrFilterGroup */}
-                <button 
-                    type="button" 
-                    onClick={handleAddOrFilterGroup} // Gọi hàm xử lý thêm nhóm
-                    className="guest-action-btn" 
+                <button
+                    type="button"
+                    onClick={handleAddOrFilterGroup}
+                    className="guest-action-btn"
                     style={{width: '180px', backgroundColor: '#27548a', color: 'white'}}
-                > 
+                >
                     <AddIcon /> <span>Thêm mới</span>
                 </button>
             </div>
 
-            {/* Loại bỏ phần `isAdding && (...)` */}
-            {/* <div style={{ 
-                width: '100%', padding: '20px', border: '1px solid #e0e0e0', borderRadius: '8px', 
-                marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '16px',
-                backgroundColor: '#f9f9f9', boxSizing: 'border-box'
-            }}>
-                <h4 style={{ margin: 0, fontWeight: '600', color: '#27548a' }}>Thêm nhóm khách mời mới</h4>
-                <FormField label="Tên nhóm mới">
-                    <CustomInput value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} placeholder="Ví dụ: Bạn thân cô dâu..." />
-                </FormField>
-                <FormField label="Kiểu hiển thị lời xưng hô cho nhóm">
-                       <CustomSelect value={newGroupSalutation} onChange={(e) => setNewGroupSalutation(e.target.value)}>
-                            {availableSalutations.map(s => <option key={s} value={s}>{s}</option>)}
-                       </CustomSelect>
-                </FormField>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <button type="button" onClick={() => setIsAdding(false)} style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', backgroundColor: 'white' }}>Hủy</button>
-                    <button type="button" onClick={handleSaveNewGroup} style={{ padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#27548a', color: 'white' }}>Lưu nhóm</button>
-                </div>
-            </div> */}
-
-            {/* Bảng danh sách nhóm */}
             <div style={{ width: '100%', marginTop: '20px' }}>
-                {/* Header của bảng */}
                 <div style={{ display: "flex", flexDirection: "row", borderBottom: '2px solid #ccc', paddingBottom: '8px' }}>
                     <div className="table-header-cell" style={{ width: "60px", flexShrink: 0, justifyContent: 'center' }}>#</div>
                     <div className="table-header-cell" style={{ flex: 2, justifyContent: 'start', padding: '0 20px' }}>TÊN NHÓM</div>
                     <div className="table-header-cell" style={{ flex: 3, justifyContent: 'start', padding: '0 20px' }}>KIỂU HIỂN THỊ LỜI XƯNG HÔ</div>
                     <div className="table-header-cell" style={{ flex: 1, justifyContent: 'center' }}>TÁC VỤ</div>
                 </div>
-                
-                {/* Các hàng dữ liệu của bảng */}
+
                 {groups.map((group, index) => (
-                    <div key={group._id} style={{ 
-                        display: "flex", flexDirection: "row", 
+                    <div key={group._id} style={{
+                        display: "flex", flexDirection: "row",
                         backgroundColor: index % 2 !== 0 ? 'rgba(239,239,239,0.5)' : 'white',
                         borderBottom: '1px solid #e0e0e0', minHeight: '60px', alignItems: 'center'
                     }}>
-                        {editingGroupId === group._id ? ( 
-                            // --- Chế độ chỉnh sửa ---
+                        {editingGroupId === group._id ? (
                             <>
                                 <div className="table-body-cell" style={{ width: "60px", flexShrink: 0, justifyContent: 'center' }}>{index + 1}</div>
                                 <div className="table-body-cell" style={{ flex: 2, padding: '5px 10px' }}>
@@ -471,11 +434,10 @@ const ManageGroupsForm = ({ invitationId, onClose, onDataChange }) => {
                                 </div>
                             </>
                         ) : (
-                            // --- Chế độ hiển thị ---
                             <>
                                 <div className="table-body-cell" style={{ width: "60px", flexShrink: 0, justifyContent: 'center' }}>{index + 1}</div>
-                                <div className="table-body-cell" style={{ flex: 2, justifyContent: 'start', padding: '5px 20px' }}>{group.name}</div>
-                                <div className="table-body-cell" style={{ flex: 3, justifyContent: 'start', padding: '5px 20px' }}>{group.salutation}</div>
+                                <div className="table-body-cell" title={group.name} style={{ flex: 2, justifyContent: 'start', padding: '5px 20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</div>
+                                <div className="table-body-cell" title={group.salutation} style={{ flex: 3, justifyContent: 'start', padding: '5px 20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.salutation}</div>
                                 <div className="table-body-cell" style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', gap: '8px' }}>
                                     <button type="button" className="table-action-btn" onClick={() => handleEditClick(group)}> <EditIcon /> </button>
                                     <button type="button" className="table-action-btn" onClick={() => handleDeleteGroupRequest(group._id)}> <DeleteIcon /> </button>
@@ -500,7 +462,7 @@ const ManageGroupsForm = ({ invitationId, onClose, onDataChange }) => {
 };
 
 {/* ----- NEW: Guest Card Component for Mobile/Tablet ----- */}
-const GuestCard = ({ guest, onEdit, onDelete, onSendEmail, index }) => { // Thêm onSendEmail
+const GuestCard = ({ guest, onEdit, onDelete, onSendEmail, index }) => {
     const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 
     const getEmailStatusText = (status) => {
@@ -516,8 +478,7 @@ const GuestCard = ({ guest, onEdit, onDelete, onSendEmail, index }) => { // Thê
             <div className="guest-card-header">
                 <div className="guest-card-number">#{index + 1}</div>
                 <div className="guest-card-actions">
-                    Thêm nút Gửi Email
-                    {guest.email && ( // Chỉ hiển thị nút nếu có email
+                    {guest.email && (
                         <button className="guest-card-action-btn" onClick={() => onSendEmail(guest)}>
                             <SendEmailIcon /> Gửi Email
                         </button>
@@ -567,7 +528,7 @@ const GuestCard = ({ guest, onEdit, onDelete, onSendEmail, index }) => { // Thê
                 </div>
                 <div className="guest-info-item">
                     <span className="guest-info-label">Trạng thái Email:</span>
-                    <span className="guest-info-value">{getEmailStatusText(guest.emailStatus)}</span> {/* Cập nhật trạng thái email */}
+                    <span className="guest-info-value">{getEmailStatusText(guest.emailStatus)}</span>
                 </div>
             </div>
         </div>
@@ -575,14 +536,53 @@ const GuestCard = ({ guest, onEdit, onDelete, onSendEmail, index }) => { // Thê
 };
 
 {/* ----- PANEL QUẢN LÝ KHÁCH MỜI ----- */}
-const GuestManagementPanel = ({ invitationId, guests = [], onDataChange }) => {
+const GuestManagementPanel = ({ invitationId, guests = [], onDataChange, invitation }) => {
     const [editingGuest, setEditingGuest] = useState(null);
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [isManageGroupsModalOpen, setManageGroupsModalOpen] = useState(false);
     const [guestToDelete, setGuestToDelete] = useState(null);
-    const [emailSendStatus, setEmailSendStatus] = useState({}); // New state to track email sending status for each guest
+    const [emailSendStatus, setEmailSendStatus] = useState({});
 
-    const isMobileOrTablet = useMediaQuery(768); // Use 768px as the breakpoint for mobile/tablet view
+    // <<< THÊM MỚI: STATE CHO CÁC BỘ LỌC >>>
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterGroup, setFilterGroup] = useState('all');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [filterEmailStatus, setFilterEmailStatus] = useState('all');
+    const isMobileOrTablet = useMediaQuery(768);
+
+  // <<< THÊM MỚI: LOGIC LỌC KHÁCH MỜI >>>
+    const filteredGuests = useMemo(() => {
+        return guests.filter(guest => {
+            const guestName = guest.name?.toLowerCase() || '';
+            const guestEmail = guest.email?.toLowerCase() || '';
+            const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+            // 1. Lọc theo từ khóa tìm kiếm (tên hoặc email)
+            if (searchTerm && !guestName.includes(lowerCaseSearchTerm) && !guestEmail.includes(lowerCaseSearchTerm)) {
+                return false;
+            }
+
+            // 2. Lọc theo nhóm
+            if (filterGroup !== 'all' && guest.group !== filterGroup) {
+                return false;
+            }
+
+            // 3. Lọc theo trạng thái tham gia
+            if (filterStatus !== 'all' && guest.status !== filterStatus) {
+                return false;
+            }
+
+            // 4. Lọc theo trạng thái email
+            if (filterEmailStatus !== 'all') {
+                const currentStatus = guest.emailStatus || 'Chưa gửi';
+                if (currentStatus !== filterEmailStatus) {
+                    return false;
+                }
+            }
+            
+            return true; // Trả về khách mời nếu vượt qua tất cả các bộ lọc
+        });
+    }, [guests, searchTerm, filterGroup, filterStatus, filterEmailStatus]);
 
     const handleDeleteRequest = (guestId) => {
         setGuestToDelete(guestId);
@@ -595,7 +595,6 @@ const GuestManagementPanel = ({ invitationId, guests = [], onDataChange }) => {
             onDataChange();
         } catch (error) {
             console.error("Lỗi khi xóa khách mời:", error);
-            // alert("Xóa khách mời thất bại.");
         } finally {
             setGuestToDelete(null);
         }
@@ -610,26 +609,36 @@ const GuestManagementPanel = ({ invitationId, guests = [], onDataChange }) => {
         setEditingGuest(null);
         setAddModalOpen(true);
     };
-    
+
     const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 
-    const stats = {
-        total: guests.length,
-        attending: guests.filter(g => g.status === 'attending').length,
-        declined: guests.filter(g => g.status === 'declined').length,
-        pending: guests.filter(g => g.status === 'pending' || !g.status).length,
-        totalGiftAmount: guests.reduce((sum, g) => sum + (g.giftAmount || 0), 0),
-    };
+    const stats = useMemo(() => ({
+        total: filteredGuests.length,
+        attending: filteredGuests.filter(g => g.status === 'attending').length,
+        declined: filteredGuests.filter(g => g.status === 'declined').length,
+        pending: filteredGuests.filter(g => g.status === 'pending' || !g.status).length,
+        totalGiftAmount: filteredGuests.reduce((sum, g) => sum + (g.giftAmount || 0), 0),
+    }), [filteredGuests]);
 
     const StatItem = ({ label, value }) => (
-       <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "12px", flex: 1, height: "96px" }}>
+       <div style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "12px",
+            flex: 1,
+            height: "96px",
+            backgroundColor: '#fff',
+            width: '100%'
+        }}>
             <div style={{ fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", textAlign: "center", color: "rgba(102,102,102,1)", fontWeight: "500" }}>{label}</div>
             <div style={{ fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "20px", textAlign: "center", color: "rgba(39,84,138,1)", textTransform: "uppercase", fontWeight: "700" }}>
                 {value}
             </div>
         </div>
     );
-    
+
     const VerticalSeparator = () => <div style={{width: '1px', height: '52px', backgroundColor: '#E0E0E0'}} />;
 
     const handleSendEmail = async (guest) => {
@@ -643,17 +652,17 @@ const GuestManagementPanel = ({ invitationId, guests = [], onDataChange }) => {
             return;
         }
 
-        setEmailSendStatus(prev => ({ ...prev, [guest._id]: 'sending' })); // Set status to sending
+        setEmailSendStatus(prev => ({ ...prev, [guest._id]: 'sending' }));
         try {
             await api.put(`/invitations/${invitationId}/guests/${guest._id}/send-email`);
-            alert(`Đã gửi email đến ${guest.name} thành công!`); // Should be a custom modal/toast
-            onDataChange(); // Refetch data to update email status in table
+            alert(`Đã gửi email đến ${guest.name} thành công!`);
+            onDataChange();
         } catch (error) {
             console.error("Lỗi khi gửi email:", error);
-            alert(`Gửi email thất bại: ${error.response?.data?.message || error.message}`); // Should be a custom modal/toast
-            setEmailSendStatus(prev => ({ ...prev, [guest._id]: 'failed' })); // Set status to failed
+            alert(`Gửi email thất bại: ${error.response?.data?.message || error.message}`);
+            setEmailSendStatus(prev => ({ ...prev, [guest._id]: 'failed' }));
         } finally {
-            setEmailSendStatus(prev => ({ ...prev, [guest._id]: undefined })); // Clear status after action
+            setEmailSendStatus(prev => ({ ...prev, [guest._id]: undefined }));
         }
     };
 
@@ -679,37 +688,84 @@ const GuestManagementPanel = ({ invitationId, guests = [], onDataChange }) => {
 
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "start", alignItems: "start", gap: "20px", width: '100%' }}>
                 <div style={{ display: "flex", flexDirection: "row", gap: "20px", width: "100%" }}>
-                    <input className="filter-input" placeholder="Tìm kiếm khách mời..."/>
-                    <select className="filter-select"> <option>Tất cả nhóm</option> </select>
-                    <select className="filter-select"> <option>Trạng thái tham gia</option> </select>
-                    <select className="filter-select"> <option>Trạng thái Email</option> </select>
+                    <input 
+                        className="filter-input" 
+                        placeholder="Tìm kiếm theo tên hoặc email..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                    <select 
+                        className="filter-select"
+                        value={filterGroup}
+                        onChange={e => setFilterGroup(e.target.value)}
+                    >
+                        <option value="all">Tất cả nhóm</option>
+                        {invitation?.guestGroups?.map(group => (
+                            <option key={group._id} value={group.name}>{group.name}</option>
+                        ))}
+                    </select>
+                    <select 
+                        className="filter-select"
+                        value={filterStatus}
+                        onChange={e => setFilterStatus(e.target.value)}
+                    >
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="pending">Chưa xác nhận</option>
+                        <option value="attending">Sẽ tham gia</option>
+                        <option value="declined">Không tham gia</option>
+                    </select>
+                    <select 
+                        className="filter-select"
+                        value={filterEmailStatus}
+                        onChange={e => setFilterEmailStatus(e.target.value)}
+                    >
+                        <option value="all">Trạng thái Email</option>
+                        <option value="Chưa gửi">Chưa gửi</option>
+                        <option value="Đã gửi">Đã gửi</option>
+                        <option value="Thất bại">Thất bại</option>
+                    </select>
                 </div>
 
-                <div style={{ backgroundColor: "#fff", boxShadow: "0px 0px 8px 0px rgba(0,0,0,0.3)", display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center", width: '100%' }}>
-                    <StatItem label="Tổng số khách mời" value={stats.total} /> <VerticalSeparator />
-                    <StatItem label="Tham gia" value={stats.attending} /> <VerticalSeparator />
-                    <StatItem label="Không tham gia" value={stats.declined} /> <VerticalSeparator />
-                    <StatItem label="Không xác nhận" value={stats.pending} /> <VerticalSeparator />
-                    <StatItem label="Tiền mừng" value={formatCurrency(stats.totalGiftAmount)} /> <VerticalSeparator />
+                <div style={{
+                    backgroundColor: "#fff",
+                    boxShadow: "0px 0px 8px 0px rgba(0,0,0,0.3)",
+                    width: '100%',
+                    display: isMobileOrTablet ? 'grid' : 'flex',
+                    gridTemplateColumns: isMobileOrTablet ? 'repeat(2, 1fr)' : 'none',
+                    gap: isMobileOrTablet ? '1px' : '0',
+                    backgroundColor: isMobileOrTablet ? '#E0E0E0' : '#fff',
+                    flexDirection: isMobileOrTablet ? 'column' : 'row',
+                    justifyContent: "center",
+                    alignItems: "center",
+                    overflow: 'hidden'
+                }}>
+                    <StatItem label="Tổng số khách mời" value={stats.total} />
+                    { !isMobileOrTablet && <VerticalSeparator /> }
+                    <StatItem label="Tham gia" value={stats.attending} />
+                    { !isMobileOrTablet && <VerticalSeparator /> }
+                    <StatItem label="Không tham gia" value={stats.declined} />
+                    { !isMobileOrTablet && <VerticalSeparator /> }
+                    <StatItem label="Không xác nhận" value={stats.pending} />
+                    { !isMobileOrTablet && <VerticalSeparator /> }
+                    <StatItem label="Tiền mừng" value={formatCurrency(stats.totalGiftAmount)} />
+                    { !isMobileOrTablet && <VerticalSeparator /> }
                     <StatItem label="Vàng mừng" value={"N/A"} />
                 </div>
 
                 {isMobileOrTablet ? (
-                    // Mobile/Tablet View: Render GuestCard components
                     <div className="guest-cards-container">
-                        {guests.map((guest, index) => (
-                            <GuestCard 
-                                key={guest._id} 
-                                guest={guest} 
-                                onEdit={openEditModal} 
-                                onDelete={handleDeleteRequest} 
-                                onSendEmail={handleSendEmail} // Pass the send email handler
-                                index={index} // Pass index for numbering
+                        {filteredGuests.map((guest, index) => (
+                            <GuestCard
+                                key={guest._id}
+                                guest={guest}
+                                onEdit={openEditModal}
+                                onDelete={handleDeleteRequest}
+                                onSendEmail={handleSendEmail}
+                                index={index}
                             />
                         ))}
                     </div>
                 ) : (
-                    // Desktop View: Render the traditional table
                     <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
                         <div style={{ display: "flex", flexDirection: "row", justifyContent: "start", alignItems: "center", width: '100%' }}>
                             <div className="table-header-cell" style={{width: "60px"}}>#</div>
@@ -721,54 +777,33 @@ const GuestManagementPanel = ({ invitationId, guests = [], onDataChange }) => {
                             <div className="table-header-cell" style={{flex: 1, justifyContent: 'start', paddingLeft: '20px'}}>Tham gia</div>
                             <div className="table-header-cell" style={{flex: 1, justifyContent: 'start', paddingLeft: '20px'}}>Đi cùng</div>
                             <div className="table-header-cell" style={{flex: 1.5, justifyContent: 'start', paddingLeft: '20px'}}>Mừng cưới</div>
-                            <div className="table-header-cell" style={{flex: 2}}>Tác vụ</div> {/* Tăng flex để đủ chỗ cho nút email */}
+                            <div className="table-header-cell" style={{flex: 2}}>Tác vụ</div>
                         </div>
 
-                        {guests.map((guest, index) => (
+                        {filteredGuests.map((guest, index) => (
                             <div key={guest._id} style={{ display: "flex", justifyContent: "start", alignItems: "center", width: '100%', backgroundColor: index % 2 === 0 ? 'rgba(239,239,239,1)' : 'white' }}>
-                                <div className="table-body-cell" style={{width: "60px"}}>{index + 1}</div>
-                                <div className="table-body-cell" style={{width: "83px", cursor: "pointer"}} onClick={() => handleSendEmail(guest)}> {invitationId.template?.imgSrc ? <img width="40px" height="auto" src={invitationId.template.imgSrc} alt="thumbnail"/> : <ImagePlaceholderIcon />} </div>
-                                <div className="table-body-cell" style={{width: "92px"}}>{"N/A"}</div>
-                                <div className="table-body-cell" style={{flex: 3, alignItems: 'flex-start', paddingLeft: '20px'}}>
-                                    <div style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "20px", color: "rgba(39,84,138,1)", fontWeight: "700"}}>{guest.name}</div>
-                                    <div style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px"}}>Email: {guest.email || 'N/A'}</div>
+                                <div className="table-body-cell" style={{width: "60px", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{index + 1}</div>
+                                <div className="table-body-cell" style={{width: "83px", cursor: "pointer", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} onClick={() => handleSendEmail(guest)}> {invitation.template?.imgSrc ? <img width="40px" height="auto" src={invitation.template.imgSrc} alt="thumbnail"/> : <ImagePlaceholderIcon />} </div>
+                                <div className="table-body-cell" style={{width: "92px", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{"N/A"}</div>
+                                <div className="table-body-cell" style={{flex: 3, alignItems: 'flex-start', paddingLeft: '20px', overflow: 'hidden'}}>
+                                    <div title={guest.name} style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "20px", color: "rgba(39,84,138,1)", fontWeight: "700", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>{guest.name}</div>
+                                    <div title={guest.email || 'N/A'} style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%'}}>Email: {guest.email || 'N/A'}</div>
                                     <div style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", color: "rgba(102,102,102,1)"}}>
-                                        {/* Hiển thị trạng thái email và nút gửi */}
-                                        {emailSendStatus[guest._id] === 'sending' ? (
-                                            'Đang gửi...'
-                                        ) : (
+                                        {emailSendStatus[guest._id] === 'sending' ? ( 'Đang gửi...' ) : (
                                             guest.email ? (
                                                 <>
                                                     {guest.emailStatus === 'Đã gửi' ? 'Đã gửi Email' : 'Chưa gửi Email'}
-                                                    {guest.emailStatus !== 'Đã gửi' && (<></>
-                                                        // <button
-                                                        //     className="send-email-btn"
-                                                        //     onClick={() => handleSendEmail(guest)}
-                                                        //     style={{
-                                                        //         marginLeft: '10px',
-                                                        //         padding: '5px 10px',
-                                                        //         backgroundColor: '#4CAF50',
-                                                        //         color: 'white',
-                                                        //         border: 'none',
-                                                        //         borderRadius: '4px',
-                                                        //         cursor: 'pointer',
-                                                        //         fontSize: '14px'
-                                                        //     }}
-                                                        // >
-                                                        //     Gửi Email
-                                                        // </button>
-                                                    )}
                                                 </>
                                             ) : 'Không có Email'
                                         )}
                                     </div>
                                 </div>
-                                <div className="table-body-cell" style={{flex: 1.5, alignItems: 'flex-start', paddingLeft: '20px'}}>{guest.phone || 'N/A'}</div>
-                                <div className="table-body-cell" style={{flex: 2}}> <div className="group-tag">{guest.group || 'Chưa phân loại'}</div> </div>
-                                <div className="table-body-cell" style={{flex: 1, alignItems: 'flex-start', paddingLeft: '20px'}}>{guest.status === 'attending' ? 'Có' : (guest.status === 'declined' ? 'Không' : 'Chờ')}</div>
-                                <div className="table-body-cell" style={{flex: 1, alignItems: 'flex-start', paddingLeft: '20px'}}>{guest.attendingCount || 0}</div>
-                                <div className="table-body-cell" style={{flex: 1.5, alignItems: 'flex-start', paddingLeft: '20px'}}>{formatCurrency(guest.giftAmount)}</div>
-                                <div className="table-body-cell" style={{flex: 2, flexDirection: 'row', gap: '16px'}}> {/* Tăng flex cho tác vụ */}
+                                <div className="table-body-cell" style={{flex: 1.5, alignItems: 'flex-start', paddingLeft: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{guest.phone || 'N/A'}</div>
+                                <div className="table-body-cell" style={{flex: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}> <div className="group-tag">{guest.group || 'Chưa phân loại'}</div> </div>
+                                <div className="table-body-cell" style={{flex: 1, alignItems: 'flex-start', paddingLeft: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{guest.status === 'attending' ? 'Có' : (guest.status === 'declined' ? 'Không' : 'Chờ')}</div>
+                                <div className="table-body-cell" style={{flex: 1, alignItems: 'flex-start', paddingLeft: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{guest.attendingCount || 0}</div>
+                                <div className="table-body-cell" style={{flex: 1.5, alignItems: 'flex-start', paddingLeft: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{formatCurrency(guest.giftAmount)}</div>
+                                <div className="table-body-cell" style={{flex: 2, flexDirection: 'row', gap: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                                     <button className="table-action-btn" onClick={() => openEditModal(guest)}> <EditIcon /> </button>
                                     <button className="table-action-btn" onClick={() => handleDeleteRequest(guest._id)}> <DeleteIcon /> </button>
                                 </div>
@@ -777,7 +812,7 @@ const GuestManagementPanel = ({ invitationId, guests = [], onDataChange }) => {
                     </div>
                 )}
             </div>
-            
+
             {isAddModalOpen && (
                 <Modal title={editingGuest ? "Cập nhật khách mời" : "Thêm mới khách mời"} onClose={() => setAddModalOpen(false)} size="large" >
                     <GuestForm invitationId={invitationId} onSave={onDataChange} onClose={() => setAddModalOpen(false)} guestToEdit={editingGuest} />
@@ -811,44 +846,171 @@ const WishManagementPanel = () => (
 {/* ----- PANEL CÀI ĐẶT THIỆP ----- */}
 const InvitationSettingsPanel = ({ invitation, onDataChange }) => {
     const [settings, setSettings] = useState({
+        // Cài đặt chung & Email
         title: '',
         description: '',
         salutationStyle: 'Thân gửi',
         displayStyle: 'Kiểu 1',
         emailSubject: '',
         emailBody: '',
+        // Cài đặt trang sự kiện
+        eventDate: '',
+        groomName: '',
+        brideName: '',
+        groomInfo: '',
+        brideInfo: '',
+        groomImageUrl: '',
+        brideImageUrl: '',
+        heroImages: { main: '', sub1: '', sub2: '' },
+        galleryImages: [],
+        contactGroom: '',
+        contactBride: ''
     });
+
+    const [isSaving, setIsSaving] = useState(false);
+    const multipleGalleryInputRef = React.useRef(null);
 
     useEffect(() => {
         if (invitation && invitation.settings) {
             setSettings({
-                title: invitation.settings.title || '{LờiXưngHô} {TênKháchMời} ! - Thiệp mời online',
-                description: invitation.settings.description || '{LờiXưngHô} {TênKháchMời} đến tham dự buổi tiệc chung vui cùng gia đình chúng tôi!',
+                // Cài đặt chung & Email
+                title: invitation.settings.title || '',
+                description: invitation.settings.description || '',
                 salutationStyle: invitation.settings.salutationStyle || 'Thân gửi',
                 displayStyle: invitation.settings.displayStyle || 'Kiểu 1',
-                emailSubject: invitation.settings.emailSubject || '{LờiXưngHô} {TênKháchMời} Đến tham dự buổi tiệc cùng gia đình chúng tôi! - Thiệp mời online',
-                emailBody: invitation.settings.emailBody || 'Một dấu mốc quan trọng đang đến và chúng tôi rất mong có bạn đồng hành trong khoảnh khắc đáng nhớ này.\nTrân trọng mời bạn tham dự sự kiện đặc biệt của chúng tôi.\nSự hiện diện của bạn là món quà ý nghĩa nhất mà chúng tôi có thể mong chờ!\n\nTrân trọng,\nBiihappy',
+                emailSubject: invitation.settings.emailSubject || '',
+                emailBody: invitation.settings.emailBody || '',
+                eventDate: invitation.settings.eventDate ? new Date(invitation.settings.eventDate).toISOString().slice(0, 16) : '',
+                groomName: invitation.settings.groomName || '',
+                brideName: invitation.settings.brideName || '',
+                groomInfo: invitation.settings.groomInfo || '',
+                brideInfo: invitation.settings.brideInfo || '',
+                groomImageUrl: invitation.settings.groomImageUrl || '',
+                brideImageUrl: invitation.settings.brideImageUrl || '',
+                heroImages: invitation.settings.heroImages || { main: '', sub1: '', sub2: '' },
+                galleryImages: invitation.settings.galleryImages || [],
+                contactGroom: invitation.settings.contactGroom || '',
+                contactBride: invitation.settings.contactBride || ''
             });
         }
     }, [invitation]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setSettings(prevSettings => ({ ...prevSettings, [name]: value }));
+        setSettings(prev => ({ ...prev, [name]: value }));
     };
+
+    const handleImageUpload = (fieldName, file) => {
+        setSettings(prev => ({ ...prev, [fieldName]: file }));
+    };
+
+    const handleNestedImageUpload = (parentKey, fieldKey, file) => {
+        setSettings(prev => ({
+            ...prev,
+            [parentKey]: { ...prev[parentKey], [fieldKey]: file },
+        }));
+    };
+
+    const handleGalleryImageUpload = (index, file) => {
+        const newGallery = [...settings.galleryImages];
+        newGallery[index] = file;
+        setSettings(prev => ({ ...prev, galleryImages: newGallery }));
+    };
+
+    const handleAddMultipleGalleryImages = (event) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) {
+            return;
+        }
+        // Chuyển FileList thành một mảng các File object và thêm vào state
+        const newFilesArray = Array.from(files);
+        setSettings(prev => ({
+            ...prev,
+            galleryImages: [
+                ...prev.galleryImages.filter(img => img !== null), // Lọc bỏ các slot rỗng (nếu có)
+                ...newFilesArray
+            ]
+        }));
+    };
+
+
+    const removeGalleryImageSlot = (index) => {
+        const newGallery = settings.galleryImages.filter((_, i) => i !== index);
+        setSettings(prev => ({ ...prev, galleryImages: newGallery }));
+    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSaving(true);
+        const formData = new FormData();
+    
+        // Tạo một bản sao của state để xử lý, tránh thay đổi state trực tiếp
+        const settingsPayload = JSON.parse(JSON.stringify(settings));
+    
+        // 1. Lọc ra các file mới và các URL cũ từ galleryImages
+        const newGalleryFiles = [];
+        const existingGalleryUrls = [];
+        if (settings.galleryImages && Array.isArray(settings.galleryImages)) {
+            settings.galleryImages.forEach(item => {
+                if (item instanceof File) {
+                    newGalleryFiles.push(item);
+                } else if (typeof item === 'string' && item) {
+                    existingGalleryUrls.push(item);
+                }
+                // Các giá trị `null` sẽ tự động được loại bỏ
+            });
+        }
+        // Đưa các file mới vào formData
+        newGalleryFiles.forEach((file, index) => {
+            formData.append(`galleryImages`, file); // Backend sẽ nhận một mảng file với key 'galleryImages'
+        });
+        // Cập nhật payload JSON chỉ với các URL cũ
+        settingsPayload.galleryImages = existingGalleryUrls;
+    
+        // 2. Xử lý các trường ảnh đơn lẻ khác
+        const singleImageFields = {
+            groomImageUrl: settings.groomImageUrl,
+            brideImageUrl: settings.brideImageUrl,
+            'heroImages.main': settings.heroImages.main,
+            'heroImages.sub1': settings.heroImages.sub1,
+            'heroImages.sub2': settings.heroImages.sub2,
+        };
+    
+        for (const fieldName in singleImageFields) {
+            const value = singleImageFields[fieldName];
+            if (value instanceof File) {
+                formData.append(fieldName, value); // Đưa file vào formData
+                // Xóa trường này khỏi payload JSON vì backend sẽ cập nhật nó từ file đã upload
+                if (fieldName.includes('.')) {
+                    const [parent, child] = fieldName.split('.');
+                    delete settingsPayload[parent][child];
+                } else {
+                    delete settingsPayload[fieldName];
+                }
+            }
+        }
+    
+        // 3. Đưa dữ liệu JSON (chỉ chứa text và các URL ảnh cũ) vào formData
+        formData.append('settingsData', JSON.stringify(settingsPayload));
+    
+        // 4. Gửi request
         try {
-            await api.put(`/invitations/${invitation._id}/settings`, settings);
-            alert('Đã lưu cài đặt thành công!'); // Sử dụng alert tạm thời, nên thay bằng modal
-            onDataChange();
+            await api.put(`/invitations/${invitation._id}/settings`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            alert('Đã lưu tất cả thay đổi thành công!');
+            onDataChange(); // Tải lại dữ liệu mới nhất
         } catch (error) {
             console.error("Lỗi khi lưu cài đặt:", error);
-            alert(`Lưu cài đặt thất bại: ${error.response?.data?.message || error.message}`); // Sử dụng alert tạm thời
+            const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi không xác định.";
+            alert(`Lưu cài đặt thất bại: ${errorMessage}`);
+        } finally {
+            setIsSaving(false);
         }
     };
-    
+
+
     const SettingsField = ({ label, required, description, children }) => (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -856,53 +1018,186 @@ const InvitationSettingsPanel = ({ invitation, onDataChange }) => {
                 {required && <RequiredIcon />}
             </div>
             {description && (
-                     <div style={{ fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", color: "rgba(102,102,102,1)" }}
-                     dangerouslySetInnerHTML={{ __html: description }}></div>
+                   <div style={{ fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", color: "rgba(102,102,102,1)" }}
+                   dangerouslySetInnerHTML={{ __html: description }}></div>
             )}
             {children}
         </div>
     );
 
+    // ----- NEW: MOCK Image Upload Component -----
+    const ImageUploadField = ({ label, value, onFileSelect }) => {
+        const fileInputRef = React.useRef(null);
+        const [preview, setPreview] = useState(value);
+
+        useEffect(() => {
+            if (value instanceof File) {
+                const objectUrl = URL.createObjectURL(value);
+                setPreview(objectUrl);
+                return () => URL.revokeObjectURL(objectUrl);
+            } else {
+                setPreview(value);
+            }
+        }, [value]);
+
+        const handleFileChange = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                onFileSelect(file);
+            }
+        };
+
+        return (
+            <FormField label={label}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <img
+                        src={preview || 'https://placehold.co/100x100/EEE/31343C?text=No+Image'}
+                        alt="Preview"
+                        style={{ width: '80px', height: '80px', objectFit: 'cover', border: '1px solid #ccc', borderRadius: '4px' }}
+                    />
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current.click()}
+                        style={{ padding: '8px 12px', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '4px', background: 'white' }}
+                    >
+                        Chọn ảnh
+                    </button>
+                </div>
+            </FormField>
+        );
+    };
+
     return (
         <form onSubmit={handleSubmit} style={{ backgroundColor: "white", width: "100%", maxWidth: '1080px', margin: '40px auto', boxShadow: "0px 0px 8px 0px rgba(0,0,0,0.3)", padding: "40px", boxSizing: 'border-box', display: "flex", flexDirection: "column", gap: "40px" }}>
-             <div style={{ backgroundColor: "rgba(204,215,229,1)", padding: "20px", fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", borderRadius: '4px' }}>
-                 <span style={{ fontWeight: "700" }}>Lưu ý:</span> Hệ thống sẽ tự động thay đổi cụm từ <code style={{fontWeight: 700}}>&#123;TênKháchMời&#125;</code> và <code style={{fontWeight: 700}}>&#123;LờiXưngHô&#125;</code>.
-             </div>
+            <div style={{ backgroundColor: "rgba(204,215,229,1)", padding: "20px", fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", borderRadius: '4px' }}>
+                <span style={{ fontWeight: "700" }}>Lưu ý:</span> Hệ thống sẽ tự động thay đổi cụm từ <code style={{fontWeight: 700}}>&#123;TênKháchMời&#125;</code> và <code style={{fontWeight: 700}}>&#123;LờiXưngHô&#125;</code>.
+            </div>
 
-             <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-                 <SettingsField label="Tiêu đề thiệp" required>
-                     <input name="title" value={settings.title} onChange={handleChange} className="settings-input"/>
-                 </SettingsField>
+            <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
+                {/* --- Phần 1: Cài đặt chung & Email --- */}
+                <div>
+                    <h3 style={{ borderBottom: '2px solid #27548a', paddingBottom: '10px', color: '#27548a', marginBottom: '20px' }}>Cài đặt chung & Email</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+                        <SettingsField label="Tiêu đề thiệp" required>
+                            <CustomInput name="title" value={settings.title} onChange={handleChange} />
+                        </SettingsField>
 
-                 <SettingsField label="Mô tả thiệp" required>
-                     <input name="description" value={settings.description} onChange={handleChange} className="settings-input"/>
-                 </SettingsField>
+                        <SettingsField label="Mô tả thiệp" required>
+                            <CustomInput name="description" value={settings.description} onChange={handleChange} />
+                        </SettingsField>
 
-                 <SettingsField label="Kiểu hiển thị Lời Xưng Hô" required description="Kiểu hiển thị bạn chọn ở đây sẽ sử dụng cho biến: <code>&#123;LờiXưngHô&#125;</code>">
-                     <select name="salutationStyle" value={settings.salutationStyle} onChange={handleChange} className="settings-select">
-                           <option>Thân gửi</option> <option>Kính mời</option> <option>Trân trọng kính mời</option>
-                     </select>
-                 </SettingsField>
-                 
-                 <SettingsField label="Kiểu hiển thị thiệp mời" required>
-                     <select name="displayStyle" value={settings.displayStyle} onChange={handleChange} className="settings-select">
-                           <option>Kiểu 1</option> <option>Kiểu 2</option>
-                     </select>
-                 </SettingsField>
+                        <SettingsField label="Kiểu hiển thị Lời Xưng Hô" required description="Kiểu hiển thị bạn chọn ở đây sẽ sử dụng cho biến: <code>&#123;LờiXưngHô&#125;</code>">
+                            <CustomSelect name="salutationStyle" value={settings.salutationStyle} onChange={handleChange}>
+                                <option>Thân gửi</option> <option>Kính mời</option> <option>Trân trọng kính mời</option>
+                            </CustomSelect>
+                        </SettingsField>
 
-                 <SettingsField label="Nội dung gửi thiệp mời qua Email" required description="Nội dung này sử dụng như một lời mời khi bạn gửi thiệp mời qua email.">
-                     <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                           <label style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", fontWeight: "500"}}>[ Tiêu đề gửi email ]</label>
-                           <input name="emailSubject" value={settings.emailSubject} onChange={handleChange} className="settings-input"/>
-                           <label style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", fontWeight: "500", marginTop: '12px'}}>[ Nội dung gửi email ]</label>
-                           <textarea name="emailBody" value={settings.emailBody} onChange={handleChange} className="settings-textarea" rows="8"></textarea>
-                     </div>
-                 </SettingsField>
-             </div>
-             
-             <button type="submit" style={{ backgroundColor: "rgba(39,84,138,1)", width: "100%", height: "60px", color: "white", border: 'none', cursor: 'pointer', fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", textTransform: "uppercase", fontWeight: "600", borderRadius: '4px' }}>
-                 Lưu thông tin
-             </button>
+                        <SettingsField label="Kiểu hiển thị thiệp mời" required>
+                            <CustomSelect name="displayStyle" value={settings.displayStyle} onChange={handleChange}>
+                                <option>Kiểu 1</option> <option>Kiểu 2</option>
+                            </CustomSelect>
+                        </SettingsField>
+
+                        <SettingsField label="Nội dung gửi thiệp mời qua Email" required description="Nội dung này sử dụng như một lời mời khi bạn gửi thiệp mời qua email.">
+                            <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                                <label style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", fontWeight: "500"}}>[ Tiêu đề gửi email ]</label>
+                                <CustomInput name="emailSubject" value={settings.emailSubject} onChange={handleChange} />
+                                <label style={{fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", fontWeight: "500", marginTop: '12px'}}>[ Nội dung gửi email ]</label>
+                                <textarea name="emailBody" value={settings.emailBody} onChange={handleChange} className="settings-textarea" rows="8"></textarea>
+                            </div>
+                        </SettingsField>
+                    </div>
+                </div>
+
+                {/* --- Phần 2: Cài đặt trang sự kiện công khai --- */}
+                <div>
+                     <h3 style={{ borderBottom: '2px solid #27548a', paddingBottom: '10px', color: '#27548a', marginBottom: '20px' }}>Cài đặt trang sự kiện công khai</h3>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '24px'}}>
+                        <FormField label="Ngày giờ diễn ra sự kiện">
+                            <CustomInput name="eventDate" type="datetime-local" value={settings.eventDate} onChange={handleChange}/>
+                        </FormField>
+
+                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+                            <FormField label="Tên chú rể">
+                                <CustomInput name="groomName" value={settings.groomName} onChange={handleChange}/>
+                            </FormField>
+                            <FormField label="Tên cô dâu">
+                                <CustomInput name="brideName" value={settings.brideName} onChange={handleChange}/>
+                            </FormField>
+                            <FormField label="Thông tin chú rể">
+                                <textarea name="groomInfo" value={settings.groomInfo} onChange={handleChange} className="settings-textarea" rows="4"></textarea>
+                            </FormField>
+                            <FormField label="Thông tin cô dâu">
+                                <textarea name="brideInfo" value={settings.brideInfo} onChange={handleChange} className="settings-textarea" rows="4"></textarea>
+                            </FormField>
+                             <ImageUploadField label="Ảnh chú rể" value={settings.groomImageUrl} onFileSelect={(file) => handleImageUpload('groomImageUrl', file)} />
+                             <ImageUploadField label="Ảnh cô dâu" value={settings.brideImageUrl} onFileSelect={(file) => handleImageUpload('brideImageUrl', file)} />
+                             <FormField label="Liên hệ chú rể">
+                                <CustomInput name="contactGroom" value={settings.contactGroom} onChange={handleChange}/>
+                            </FormField>
+                            <FormField label="Liên hệ cô dâu">
+                                <CustomInput name="contactBride" value={settings.contactBride} onChange={handleChange}/>
+                            </FormField>
+                        </div>
+
+                        <FormField label="Bộ sưu tập ảnh Hero (3 ảnh)">
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                                <ImageUploadField label="Ảnh chính" value={settings.heroImages.main} onFileSelect={(file) => handleNestedImageUpload('heroImages', 'main', file)} />
+                                <ImageUploadField label="Ảnh phụ 1" value={settings.heroImages.sub1} onFileSelect={(file) => handleNestedImageUpload('heroImages', 'sub1', file)} />
+                                <ImageUploadField label="Ảnh phụ 2" value={settings.heroImages.sub2} onFileSelect={(file) => handleNestedImageUpload('heroImages', 'sub2', file)} />
+                            </div>
+                        </FormField>
+
+                        <FormField label="Bộ sưu tập ảnh cưới">
+                            {settings.galleryImages.map((img, index) => (
+                                <div key={index} style={{display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px'}}>
+                                    <ImageUploadField 
+                                        label={`Ảnh ${index + 1}`} 
+                                        value={img} 
+                                        // Hàm này để thay thế một ảnh đã có
+                                        onFileSelect={(file) => handleGalleryImageUpload(index, file)} 
+                                    />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => removeGalleryImageSlot(index)} 
+                                        style={{padding: '8px', cursor: 'pointer', border: '1px solid #ccc', background: '#f5f5f5', borderRadius: '4px'}}>
+                                        Xóa
+                                    </button>
+                                </div>
+                            ))}
+                            
+                            {/* <<< THÊM MỚI: Input ẩn để chọn nhiều file >>> */}
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                ref={multipleGalleryInputRef}
+                                onChange={handleAddMultipleGalleryImages}
+                                style={{ display: 'none' }}
+                            />
+
+                            {/* <<< THAY ĐỔI: Cập nhật onClick cho nút "Thêm ảnh" >>> */}
+                            <button 
+                                type="button" 
+                                onClick={() => multipleGalleryInputRef.current.click()} 
+                                style={{padding: '8px 16px', cursor: 'pointer', alignSelf: 'flex-start', border: '1px solid #ccc', background: '#e0e0e0', borderRadius: '4px'}}>
+                                Thêm ảnh (có thể chọn nhiều)
+                            </button>
+                        </FormField>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" disabled={isSaving} style={{ backgroundColor: "rgba(39,84,138,1)", width: "100%", height: "60px", color: "white", border: 'none', cursor: 'pointer', fontFamily: "'SVN-Gilroy', sans-serif", fontSize: "16px", textTransform: "uppercase", fontWeight: "600", borderRadius: '4px' }}>
+                {isSaving ? 'Đang lưu...' : 'Lưu thông tin'}
+            </button>
         </form>
     );
 };
@@ -922,7 +1217,7 @@ const InvitationDetailView = ({ invitation, onGoBack, onDelete, onDataChange }) 
         { id: 'edit', title: 'Chỉnh sửa thiệp mời' },
         { id: 'delete', title: 'Xóa thiệp mời' },
     ];
-    
+
     const handleTabClick = (tabId) => {
         if (tabId === 'edit') {
             navigate(`/canvas/edit/${invitation._id}`);
@@ -932,12 +1227,12 @@ const InvitationDetailView = ({ invitation, onGoBack, onDelete, onDataChange }) 
             setActiveTab(tabId);
         }
     };
-    
+
     const handleDeleteConfirm = () => {
         onDelete(invitation._id);
         setDeleteModalOpen(false);
     };
-    
+
     const Tab = ({ id, title, isActive, onClick }) => (
         <button onClick={() => onClick(id)} className={`tab-button ${isActive ? 'active' : ''}`}>
             {title}
@@ -955,11 +1250,11 @@ const InvitationDetailView = ({ invitation, onGoBack, onDelete, onDataChange }) 
             </div>
         </div>
     );
-    
+
     const renderContent = () => {
         switch (activeTab) {
             case 'guests':
-                return <GuestManagementPanel invitationId={invitation._id} guests={invitation.guests} onDataChange={onDataChange} />;
+                return <GuestManagementPanel invitationId={invitation._id} guests={invitation.guests} onDataChange={onDataChange} invitation={invitation} />;
             case 'wishes':
                 return <WishManagementPanel/>;
             case 'invitation-settings':
@@ -982,7 +1277,7 @@ const InvitationDetailView = ({ invitation, onGoBack, onDelete, onDataChange }) 
             <div style={{width: '100%', maxWidth: '1520px', margin: '0 auto'}}>
                 {renderContent()}
             </div>
-            
+
             {isDeleteModalOpen && (
                 <DeleteConfirmationModal
                     onClose={() => setDeleteModalOpen(false)}
@@ -1004,13 +1299,13 @@ const InvitationListView = ({ invitations, onManageClick }) => {
             <div className="invitation-grid-wrapper">
                 {invitations.map(invitation => (
                      <div key={invitation._id} className="invitation-card-wrapper" onClick={() => onManageClick(invitation)}>
-                            <div className="invitation-card-thumbnail">
-                             <img src={invitation.template?.imgSrc || 'https://placehold.co/600x400/EEE/31343C?text=No+Image'} alt={invitation.slug}/>
-                            </div>
-                            <div className="invitation-card-content">
-                                <h5>{invitation.slug || 'Thiết kế không tên'}</h5>
-                                <button className="btn">Quản lý thiệp</button>
-                            </div>
+                         <div className="invitation-card-thumbnail">
+                           <img src={invitation.template?.imgSrc || 'https://placehold.co/600x400/EEE/31343C?text=No+Image'} alt={invitation.slug}/>
+                         </div>
+                         <div className="invitation-card-content">
+                             <h5>{invitation.slug || 'Thiết kế không tên'}</h5>
+                             <button className="btn">Quản lý thiệp</button>
+                         </div>
                      </div>
                 ))}
             </div>
@@ -1040,7 +1335,6 @@ const InvitationManagement = () => {
         } catch (error) {
             console.error("Lỗi khi tải dữ liệu:", error);
             if (error.response?.status === 401) { navigate('/sign-in'); }
-            // Handle other errors, e.g., show a message to the user
         } finally {
             setLoading(false);
         }
@@ -1061,31 +1355,29 @@ const InvitationManagement = () => {
     const handleDelete = async (idToDelete) => {
         try {
             await api.delete(`/invitations/${idToDelete}`);
-            // alert('Xóa thiệp thành công!'); // Should be a custom modal/toast
             navigate('/invitation-management');
         } catch (error) {
             console.error("Lỗi khi xóa thiệp:", error);
-            // alert('Xóa thiệp thất bại.'); // Should be a custom modal/toast
         }
     };
 
     if (loading) {
         return <div className="container"><p>Đang tải dữ liệu...</p></div>;
     }
-    
+
     return (
         <main className="management-page-wrapper">
             {selectedInvitation ? (
-                <InvitationDetailView 
-                    invitation={selectedInvitation} 
+                <InvitationDetailView
+                    invitation={selectedInvitation}
                     onGoBack={handleGoBack}
                     onDelete={handleDelete}
-                    onDataChange={fetchData} 
+                    onDataChange={fetchData}
                 />
             ) : (
-                <InvitationListView 
-                    invitations={myInvitations} 
-                    onManageClick={handleManageClick} 
+                <InvitationListView
+                    invitations={myInvitations}
+                    onManageClick={handleManageClick}
                 />
             )}
         </main>

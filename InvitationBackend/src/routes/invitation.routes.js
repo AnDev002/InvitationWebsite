@@ -2,10 +2,13 @@ const express = require('express');
 const router = express.Router();
 const invitationController = require('../controllers/invitation.controller');
 const { protect } = require('../middleware/auth.middleware'); // Middleware xác thực người dùng
+const { upload } = require('../middleware/upload.middleware');
 
 // === Route công khai ===
 // Lấy thiệp mời công khai bằng slug, không cần đăng nhập
 router.get('/slug/:slug', invitationController.getPublicInvitationBySlug);
+router.get('/public/:id', invitationController.getPublicInvitationById);
+router.put('/:invitationId/guests/:guestId/rsvp', invitationController.submitRsvp);
 
 // Gửi lời chúc cho một thiệp mời, không cần đăng nhập
 router.post('/:id/wishes', invitationController.addWish);
@@ -26,7 +29,11 @@ router.route('/:id')
     .delete(invitationController.deleteInvitation); // Xóa thiệp
 
 // MỚI: Route để cập nhật cài đặt thiệp
-router.put('/:id/settings', invitationController.updateInvitationSettings);
+router.put(
+    '/:id/settings',
+    upload.any(), // Sử dụng upload.any()
+    invitationController.updateInvitationSettings
+);
 
 // CRUD cho khách mời trong một thiệp (chỉ chủ sở hữu mới có quyền)
 router.route('/:id/guests')
